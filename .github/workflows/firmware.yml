@@ -5,7 +5,7 @@ on:
     branches: ["**"]
 
 jobs:
-  build:
+  firmware-build:
     runs-on: ubuntu-latest
 
     steps:

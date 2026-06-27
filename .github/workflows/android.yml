@@ -5,7 +5,7 @@ on:
     branches: ["**"]
 
 jobs:
-  build:
+  android-build:
     runs-on: ubuntu-latest
 
     steps:
