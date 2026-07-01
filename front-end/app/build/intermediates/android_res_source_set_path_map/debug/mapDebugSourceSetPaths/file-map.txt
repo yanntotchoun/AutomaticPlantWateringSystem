@@ -1,0 +1,8 @@
+com.example.plantwateringsystem.app-pngs-0 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/build/generated/res/pngs/debug
+com.example.plantwateringsystem.app-updated_navigation_xml-1 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/build/generated/updated_navigation_xml/debug
+com.example.plantwateringsystem.app-packageDebugResources-2 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.example.plantwateringsystem.app-packageDebugResources-3 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.example.plantwateringsystem.app-debug-4 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.example.plantwateringsystem.app-debug-5 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/src/debug/res
+com.example.plantwateringsystem.app-main-6 /Users/pamellagalvao/AndroidStudioProjects/PlantWateringSystem/app/src/main/res
+gradleHome-0 /Users/pamellagalvao/.gradle
