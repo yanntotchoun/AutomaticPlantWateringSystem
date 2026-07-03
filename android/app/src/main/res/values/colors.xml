@@ -1,5 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="purple_80">#FFD0BCFF</color>
+    <color name="purple_grey_80">#FFCCC2DC</color>
+    <color name="pink_80">#FFEFB8C8</color>
+
+    <color name="purple_40">#FF6650A4</color>
+    <color name="purple_grey_40">#FF625B71</color>
+    <color name="pink_40">#FF7D5260</color>
+
+    <!-- App-specific colors, ported from hardcoded Color(0x...) values in the Compose files -->
+    <color name="header_green">#FF4E8F45</color>
+    <color name="card_white">#FFFFFFFF</color>
+    <color name="summary_card_bg">#FFF3F8EF</color>
+    <color name="divider_gray">#FFE6E6E6</color>
+
+    <color name="text_dark">#FF111111</color>
+    <color name="text_dark_alt">#FF1D1D1D</color>
+    <color name="text_gray_333">#FF333333</color>
+    <color name="text_gray_555">#FF555555</color>
+    <color name="text_gray_666">#FF666666</color>
+    <color name="text_gray_777">#FF777777</color>
+    <color name="text_disabled">#FF999999</color>
+    <color name="text_disabled_light">#FFAAAAAA</color>
+
+    <color name="avatar_bg">#FFDCEFD4</color>
+    <color name="avatar_text">#FF3E7D3A</color>
+
+    <color name="status_dry_bg">#FFFBE4E2</color>
+    <color name="status_dry_text">#FF9C1C16</color>
+    <color name="status_medium_bg">#FFF8EBCF</color>
+    <color name="status_medium_text">#FFB26A00</color>
+    <color name="status_healthy_bg">#FFDDEFD5</color>
+    <color name="status_healthy_text">#FF2E7D32</color>
 </resources>

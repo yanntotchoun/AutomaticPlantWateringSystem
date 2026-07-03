@@ -1,3 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AutomaticPlantWateringSystem</string>
+    <string name="app_name">Plant Watering System</string>
+
+    <!-- Shared -->
+    <string name="tap_card_to_open">Tap card to open plant page</string>
+    <string name="soil_humidity">Soil humidity</string>
+    <string name="last_watered">Last watered</string>
+    <string name="water_tank">Water tank</string>
+    <string name="water_tank_bucket">Water tank bucket</string>
+    <string name="temperature">Temperature</string>
+    <string name="show_plant_information">Show plant information</string>
+    <string name="hide_plant_information">Hide plant information</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Plant Dashboard</string>
+    <string name="dashboard_subtitle">Automatic Watering System</string>
+    <string name="search_plant_hint">Search plant name</string>
+    <string name="system_summary">System Summary</string>
+    <string name="main_dashboard_overview">Main dashboard overview</string>
+    <string name="plants_shown">Plants shown</string>
+    <string name="average_soil_humidity">Average soil humidity</string>
+    <string name="average_tank_level">Average tank level</string>
+    <string name="average_temperature">Average temperature</string>
+    <string name="no_plants_found">No plants found.</string>
+
+    <!-- Overview -->
+    <string name="overview_title">Plant Overview</string>
+    <string name="overview_subtitle">All monitored plants</string>
+    <string name="overview_summary">Overview Summary</string>
+    <string name="total_plants">Total plants</string>
+    <string name="plants_needing_water">Plants needing water</string>
+    <string name="tap_to_open_details">Tap to open details</string>
+
+    <!-- Details -->
+    <string name="personalized_plant_page">Personalized Plant Page</string>
+    <string name="plant_recommendation">Plant recommendation</string>
+    <string name="back_to_dashboard">Back to dashboard</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">App preferences and configuration</string>
+    <string name="units">Units</string>
+    <string name="temperature_unit">Temperature unit</string>
+    <string name="celsius">Celsius</string>
+    <string name="fahrenheit">Fahrenheit</string>
+    <string name="thresholds">Thresholds</string>
+    <string name="dry_soil_threshold_label">Dry soil threshold: %1$d%%</string>
+    <string name="full_tank_threshold_label">Full tank threshold: %1$d%%</string>
+    <string name="dry_soil_threshold_desc">Plants below this humidity level will be marked as dry.</string>
+    <string name="full_tank_threshold_desc">Tank levels at or above this value will show a full bucket.</string>
+    <string name="notifications">Notifications</string>
+    <string name="enable_notifications">Enable notifications</string>
+    <string name="enable_notifications_desc">Allow the app to send plant care alerts.</string>
+    <string name="low_humidity_alerts">Low humidity alerts</string>
+    <string name="low_humidity_alerts_desc">Notify when soil humidity is below the dry threshold.</string>
+    <string name="low_tank_alerts">Low tank alerts</string>
+    <string name="low_tank_alerts_desc">Notify when the water tank level is low.</string>
 </resources>

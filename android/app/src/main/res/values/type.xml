@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Equivalent of Typography's bodyLarge TextStyle (16sp, normal weight, 0.5sp letter spacing) -->
+    <style name="TextAppearance.PlantApp.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:letterSpacing">0.03</item>
+    </style>
+</resources>
