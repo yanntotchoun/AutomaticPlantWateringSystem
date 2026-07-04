@@ -11,7 +11,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -29,7 +28,7 @@ import java.util.Locale;
  * Header + search bar live directly in the fragment layout; the search-filtered
  * summary card, plant cards, and empty state are handled by DashboardListAdapter.
  */
-public class DashboardFragment extends Fragment {
+public class DashboardFragment extends BaseFragment {
 
     /** Same shape as OverviewFragment.PlantClickListener - MainActivity implements both. */
     public interface PlantClickListener {
@@ -69,6 +68,8 @@ public class DashboardFragment extends Fragment {
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.dashboard_title);
         ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.dashboard_subtitle);
+
+        applyStatusBarInset(header);
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_dashboard);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));

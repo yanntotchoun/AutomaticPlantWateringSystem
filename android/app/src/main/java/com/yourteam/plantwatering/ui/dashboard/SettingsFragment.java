@@ -9,7 +9,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 
 import com.yourteam.plantwatering.R;
 import com.google.android.material.button.MaterialButton;
@@ -22,7 +21,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
  * the Views and reflects/saves state exactly like the Compose version's remember +
  * sharedPreferences.edit() calls did.
  */
-public class SettingsFragment extends Fragment {
+public class SettingsFragment extends BaseFragment {
 
     private PlantSettingsManager settingsManager;
 
@@ -43,6 +42,8 @@ public class SettingsFragment extends Fragment {
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.settings_title);
         ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.settings_subtitle);
         ((TextView) header.findViewById(R.id.text_header_title)).setTextSize(32);
+
+        applyStatusBarInset(header);
 
         setUpTemperatureUnit(view);
         setUpThresholds(view);

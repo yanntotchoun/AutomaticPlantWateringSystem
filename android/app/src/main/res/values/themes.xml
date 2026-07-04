@@ -7,6 +7,8 @@
         Theme.Material3.DynamicColors.* base themes below.
     -->
     <style name="Theme.PlantWateringSystem" parent="Theme.Material3.DynamicColors.Light">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
         <item name="colorPrimary">@color/purple_40</item>
         <item name="colorSecondary">@color/purple_grey_40</item>
         <item name="colorTertiary">@color/pink_40</item>
@@ -14,6 +16,8 @@
     </style>
 
     <style name="Theme.PlantWateringSystem.Dark" parent="Theme.Material3.DynamicColors.Dark">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
         <item name="colorPrimary">@color/purple_80</item>
         <item name="colorSecondary">@color/purple_grey_80</item>
         <item name="colorTertiary">@color/pink_80</item>
