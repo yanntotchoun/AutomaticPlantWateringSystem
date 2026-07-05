@@ -69,9 +69,14 @@ public class PlantReading implements Parcelable {
         return temperature;
     }
 
+    public int getTemperatureFahrenheit() {
+        return (int) (temperature * 9.0 / 5.0 + 32);
+    }
+
     public long getLastWateredTimeMillis() {
         return lastWateredTimeMillis;
     }
+
 
     @Override
     public int describeContents() {

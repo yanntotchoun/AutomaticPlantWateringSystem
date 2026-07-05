@@ -73,4 +73,8 @@ public class PlantSettingsManager {
     public void setLowTankAlertsEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply();
     }
+
+    public boolean useFahrenheit() {
+        return "Fahrenheit".equals(getTemperatureUnit());
+    }
 }

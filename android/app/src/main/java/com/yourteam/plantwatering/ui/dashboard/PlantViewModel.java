@@ -10,8 +10,7 @@ import java.util.List;
 /**
  * Activity-scoped ViewModel shared by all fragments (Dashboard, Overview, Details).
  * Ported from the sample plant list that lived inside PlantDashboardScreen()'s
- * `remember { listOf(...) }` block. In a real app, replace getPlants() with a
- * repository/LiveData backed by your actual sensor data source.
+ * `remember { listOf(...) }` block.
  */
 public class PlantViewModel extends ViewModel {
 

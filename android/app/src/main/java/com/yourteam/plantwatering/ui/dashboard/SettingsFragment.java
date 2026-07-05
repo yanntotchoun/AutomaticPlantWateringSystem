@@ -68,6 +68,7 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
+
     /** Ported from the "Thresholds" SettingsSectionCard + two Sliders. */
     private void setUpThresholds(View view) {
         TextView drySoilLabel = view.findViewById(R.id.text_dry_soil_threshold);

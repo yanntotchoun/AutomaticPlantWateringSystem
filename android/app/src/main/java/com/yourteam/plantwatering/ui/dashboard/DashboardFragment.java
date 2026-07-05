@@ -64,7 +64,7 @@ public class DashboardFragment extends BaseFragment {
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
         allPlants = viewModel.getPlants();
 
-        // Header text (layout_screen_header.xml is shared, so fill in this screen's copy).
+        // Header text
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.dashboard_title);
         ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.dashboard_subtitle);
@@ -93,7 +93,6 @@ public class DashboardFragment extends BaseFragment {
         });
     }
 
-    /** Ported from DashboardContent.kt's `plants.filter { it.plantName.contains(searchText, ignoreCase = true) }`. */
     private void filterPlants(String searchText) {
         String query = searchText.toLowerCase(Locale.getDefault());
         List<PlantReading> filtered = new ArrayList<>();

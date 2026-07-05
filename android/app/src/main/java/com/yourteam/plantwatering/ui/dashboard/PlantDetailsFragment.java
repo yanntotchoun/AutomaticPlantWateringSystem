@@ -32,6 +32,7 @@ public class PlantDetailsFragment extends Fragment {
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
     private TextView lastWateredText;
+    private PlantSettingsManager settingsManager;
     private PlantReading plant;
 
     public static PlantDetailsFragment newInstance(PlantReading plant) {
@@ -61,6 +62,7 @@ public class PlantDetailsFragment extends Fragment {
         if (plant == null) {
             throw new IllegalStateException("Missing plant argument");
         }
+        settingsManager = new PlantSettingsManager(requireContext());
 
         // Header
         View header = view.findViewById(R.id.header_root);
@@ -87,7 +89,14 @@ public class PlantDetailsFragment extends Fragment {
                 view.findViewById(R.id.text_water_tank_percent),
                 plant.getWaterTank()
         );
-        ((TextView) view.findViewById(R.id.text_temperature)).setText(plant.getTemperature() + "\u00B0C");
+
+        int tempValue = plant.getTemperature();
+        String tempUnit = "\u00B0C";
+        if (settingsManager.useFahrenheit()) {
+            tempValue = (tempValue * 9 / 5) + 32;
+            tempUnit = "\u00B0F";
+        }
+        ((TextView) view.findViewById(R.id.text_temperature)).setText(tempValue + tempUnit);
 
         // Last watered - refreshed periodically, matching RelativeLastWateredRow's LaunchedEffect loop
         lastWateredText = view.findViewById(R.id.text_last_watered);

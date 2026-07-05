@@ -31,6 +31,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private static final int VIEW_TYPE_EMPTY = 1;
     private static final int VIEW_TYPE_PLANT = 2;
 
+
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
     }
@@ -102,12 +103,14 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final TextView title;
         private final TextView subtitle;
         private final LinearLayout rowsContainer;
+        PlantSettingsManager settingsManager;
 
         SummaryViewHolder(@NonNull View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.text_title);
             subtitle = itemView.findViewById(R.id.text_subtitle);
             rowsContainer = itemView.findViewById(R.id.summary_rows_container);
+            settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
         void bind(List<PlantReading> plants) {
@@ -124,7 +127,11 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                 for (PlantReading plant : plants) {
                     sumHumidity += plant.getSoilHumidity();
                     sumTank += plant.getWaterTank();
-                    sumTemp += plant.getTemperature();
+                    if (settingsManager.useFahrenheit()) {
+                        sumTemp += plant.getTemperatureFahrenheit();
+                    } else {
+                        sumTemp += plant.getTemperature();
+                    }
                 }
                 avgHumidity = Math.round((float) sumHumidity / plants.size());
                 avgTank = Math.round((float) sumTank / plants.size());
@@ -137,7 +144,8 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             addRow(inflater, itemView.getContext().getString(R.string.plants_shown), String.valueOf(plants.size()));
             addRow(inflater, itemView.getContext().getString(R.string.average_soil_humidity), avgHumidity + "%");
             addRow(inflater, itemView.getContext().getString(R.string.average_tank_level), avgTank + "%");
-            addRow(inflater, itemView.getContext().getString(R.string.average_temperature), avgTemp + "\u00B0C");
+            String tempUnit = settingsManager.useFahrenheit() ? "\u00B0F" : "\u00B0C";
+            addRow(inflater, itemView.getContext().getString(R.string.average_temperature), avgTemp + tempUnit);
         }
 
         private void addRow(LayoutInflater inflater, String label, String value) {
@@ -167,6 +175,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final ImageView bucket;
         private final TextView waterTankPercent;
         private final TextView temperature;
+        private PlantSettingsManager settingsManager;
 
         PlantViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -181,6 +190,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             bucket = itemView.findViewById(R.id.image_bucket);
             waterTankPercent = itemView.findViewById(R.id.text_water_tank_percent);
             temperature = itemView.findViewById(R.id.text_temperature);
+            settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
         void bind(PlantReading plant, Set<String> expandedPlantNames, PlantClickListener clickListener) {
@@ -202,7 +212,13 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank());
-                temperature.setText(plant.getTemperature() + "\u00B0C");
+                if (settingsManager.useFahrenheit()) {
+                    temperature.setText(String.format(Locale.getDefault(), "%d\u00B0F",
+                            plant.getTemperatureFahrenheit()));
+                } else {
+                    temperature.setText(String.format(Locale.getDefault(), "%d\u00B0C",
+                            plant.getTemperature()));
+                }
             }
 
             toggleButton.setOnClickListener(v -> {
