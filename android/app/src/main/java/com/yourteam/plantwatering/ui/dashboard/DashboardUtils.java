@@ -70,10 +70,10 @@ public final class DashboardUtils {
     /**
      * Text color to use for a humidity reading, based on severity.
      */
-    public static int humidityTextColor(int humidity) {
-        if (humidity < 30) {
+    public static int humidityTextColor(int humidity, int dryThreshold) {
+        if (humidity < dryThreshold) {
             return Color.parseColor("#9C1C16");
-        } else if (humidity < 60) {
+        } else if (humidity < dryThreshold + 30) {
             return Color.parseColor("#B26A00");
         } else {
             return Color.parseColor("#2E7D32");
@@ -83,10 +83,10 @@ public final class DashboardUtils {
     /**
      * Text color to use for the water tank percentage, based on level.
      */
-    public static int tankTextColor(int waterTank) {
-        if (waterTank >= 70) {
+    public static int tankTextColor(int waterTank, int fullThreshold) {
+        if (waterTank >= fullThreshold) {
             return Color.parseColor("#2E7D32");
-        } else if (waterTank >= 30) {
+        } else if (waterTank >= fullThreshold - 40) {
             return Color.parseColor("#B26A00");
         } else {
             return Color.parseColor("#9C1C16");
@@ -96,10 +96,10 @@ public final class DashboardUtils {
     /**
      * Status label for a humidity reading (used by the old StatusChip composable).
      */
-    public static String humidityStatusLabel(int humidity) {
-        if (humidity < 30) {
+    public static String humidityStatusLabel(int humidity, int dryThreshold) {
+        if (humidity < dryThreshold) {
             return "Dry";
-        } else if (humidity < 60) {
+        } else if (humidity < dryThreshold + 30) {
             return "Medium";
         } else {
             return "Healthy";
@@ -123,10 +123,10 @@ public final class DashboardUtils {
      * Short status message shown under the plant name, based on humidity.
      * Ported from PlantDetailsScreen.kt's plantStatusMessage().
      */
-    public static String plantStatusMessage(int humidity) {
-        if (humidity < 30) {
+    public static String plantStatusMessage(int humidity, int dryThreshold) {
+        if (humidity < dryThreshold) {
             return "This plant needs water soon.";
-        } else if (humidity < 60) {
+        } else if (humidity < dryThreshold + 30) {
             return "This plant has medium soil humidity.";
         } else {
             return "This plant has healthy soil humidity.";
@@ -137,11 +137,11 @@ public final class DashboardUtils {
      * Simple recommendation text based on the plant's current readings.
      * Ported from PlantDetailsScreen.kt's plantRecommendation().
      */
-    public static String plantRecommendation(PlantReading plant) {
-        if (plant.getSoilHumidity() < 30) {
+    public static String plantRecommendation(PlantReading plant, int dryThreshold, int fullThreshold) {
+        if (plant.getSoilHumidity() < dryThreshold) {
             return plant.getPlantName()
                     + " is currently dry. Check the water tank and consider watering this plant soon.";
-        } else if (plant.getWaterTank() < 30) {
+        } else if (plant.getWaterTank() < fullThreshold - 40) {
             return "The soil humidity is acceptable, but the water tank level is low. Refill the tank soon.";
         } else {
             return plant.getPlantName()

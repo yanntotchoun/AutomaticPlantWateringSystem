@@ -64,6 +64,9 @@ public class DashboardFragment extends BaseFragment {
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
         allPlants = viewModel.getPlants();
 
+        // Initialize default threshold profiles
+        new PlantSettingsManager(requireContext()).initDefaultProfiles();
+
         // Header text
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.dashboard_title);

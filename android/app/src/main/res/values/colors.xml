@@ -32,4 +32,5 @@
     <color name="status_medium_text">#FFB26A00</color>
     <color name="status_healthy_bg">#FFDDEFD5</color>
     <color name="status_healthy_text">#FF2E7D32</color>
+    <color name="error_red">#FFB00020</color>
 </resources>

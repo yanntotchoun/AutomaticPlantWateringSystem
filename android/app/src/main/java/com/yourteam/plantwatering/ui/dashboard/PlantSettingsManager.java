@@ -20,6 +20,8 @@ public class PlantSettingsManager {
     private static final String KEY_LOW_HUMIDITY_ALERTS = "low_humidity_alerts";
     private static final String KEY_LOW_TANK_ALERTS = "low_tank_alerts";
 
+    private static final String KEY_PROFILE_IDS = "profile_ids";
+
     private final SharedPreferences prefs;
 
     public PlantSettingsManager(Context context) {
@@ -76,5 +78,86 @@ public class PlantSettingsManager {
 
     public boolean useFahrenheit() {
         return "Fahrenheit".equals(getTemperatureUnit());
+    }
+
+    public static class ThresholdProfile {
+        public final String id;
+        public String name;
+        public int drySoil;
+        public int fullTank;
+
+        public ThresholdProfile(String id, String name, int drySoil, int fullTank) {
+            this.id = id;
+            this.name = name;
+            this.drySoil = drySoil;
+            this.fullTank = fullTank;
+        }
+    }
+
+    public ThresholdProfile getThresholdProfile(String id) {
+        if (id == null || "standard".equals(id)) return getDefaultProfile();
+        
+        String name = prefs.getString("threshold_name_" + id, null);
+        if (name == null) return getDefaultProfile();
+        
+        int dry = prefs.getInt("threshold_dry_" + id, 30);
+        int tank = prefs.getInt("threshold_tank_" + id, 70);
+        
+        return new ThresholdProfile(id, name, dry, tank);
+    }
+
+    private ThresholdProfile getDefaultProfile() {
+        return new ThresholdProfile("standard", "Standard", 30, 70);
+    }
+
+    public void saveThresholdProfile(ThresholdProfile profile) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("threshold_name_" + profile.id, profile.name)
+                .putInt("threshold_dry_" + profile.id, profile.drySoil)
+                .putInt("threshold_tank_" + profile.id, profile.fullTank);
+
+        if (!"standard".equals(profile.id)) {
+            java.util.Set<String> ids = new java.util.HashSet<>(prefs.getStringSet(KEY_PROFILE_IDS, new java.util.HashSet<>()));
+            if (ids.add(profile.id)) {
+                editor.putStringSet(KEY_PROFILE_IDS, ids);
+            }
+        }
+        editor.apply();
+    }
+
+    public void deleteThresholdProfile(String id) {
+        if ("standard".equals(id)) return;
+
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove("threshold_name_" + id)
+                .remove("threshold_dry_" + id)
+                .remove("threshold_tank_" + id);
+
+        java.util.Set<String> ids = new java.util.HashSet<>(prefs.getStringSet(KEY_PROFILE_IDS, new java.util.HashSet<>()));
+        if (ids.remove(id)) {
+            editor.putStringSet(KEY_PROFILE_IDS, ids);
+        }
+        editor.apply();
+    }
+
+    public java.util.List<ThresholdProfile> getAllProfiles() {
+        java.util.List<ThresholdProfile> profiles = new java.util.ArrayList<>();
+        profiles.add(getDefaultProfile());
+        
+        java.util.Set<String> ids = prefs.getStringSet(KEY_PROFILE_IDS, new java.util.HashSet<>());
+        for (String id : ids) {
+            profiles.add(getThresholdProfile(id));
+        }
+        return profiles;
+    }
+
+    // Initialize some profiles if they don't exist
+    public void initDefaultProfiles() {
+        if (!prefs.contains("threshold_name_tropical")) {
+            saveThresholdProfile(new ThresholdProfile("tropical", "Tropical", 50, 80));
+        }
+        if (!prefs.contains("threshold_name_succulent")) {
+            saveThresholdProfile(new ThresholdProfile("succulent", "Succulent", 15, 60));
+        }
     }
 }

@@ -29,12 +29,12 @@ public final class PlantViewBinder {
     }
 
     /** Ported from StatusChip: label + colors based on humidity severity. */
-    public static void bindStatusChip(TextView chipView, int humidity) {
-        chipView.setText(DashboardUtils.humidityStatusLabel(humidity));
-        chipView.setTextColor(DashboardUtils.humidityTextColor(humidity));
-        if (humidity < 30) {
+    public static void bindStatusChip(TextView chipView, int humidity, int dryThreshold) {
+        chipView.setText(DashboardUtils.humidityStatusLabel(humidity, dryThreshold));
+        chipView.setTextColor(DashboardUtils.humidityTextColor(humidity, dryThreshold));
+        if (humidity < dryThreshold) {
             chipView.setBackgroundResource(R.drawable.bg_chip_dry);
-        } else if (humidity < 60) {
+        } else if (humidity < dryThreshold + 30) {
             chipView.setBackgroundResource(R.drawable.bg_chip_medium);
         } else {
             chipView.setBackgroundResource(R.drawable.bg_chip_healthy);
@@ -65,11 +65,11 @@ public final class PlantViewBinder {
     }
 
     /** Ported from WaterTankRow: bucket icon + colored percentage text. */
-    public static void bindWaterTank(ImageView bucketView, TextView percentView, int waterTank) {
+    public static void bindWaterTank(ImageView bucketView, TextView percentView, int waterTank, int fullThreshold) {
         bucketView.setImageResource(
-                waterTank >= 70 ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail
+                waterTank >= fullThreshold ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail
         );
         percentView.setText(String.format(Locale.getDefault(), "%d%%", waterTank));
-        percentView.setTextColor(DashboardUtils.tankTextColor(waterTank));
+        percentView.setTextColor(DashboardUtils.tankTextColor(waterTank, fullThreshold));
     }
 }

@@ -71,12 +71,14 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final TextView title;
         private final TextView subtitle;
         private final LinearLayout rowsContainer;
+        private final PlantSettingsManager settingsManager;
 
         IntroViewHolder(@NonNull View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.text_title);
             subtitle = itemView.findViewById(R.id.text_subtitle);
             rowsContainer = itemView.findViewById(R.id.summary_rows_container);
+            settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
         void bind(List<PlantReading> plants) {
@@ -85,7 +87,8 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             int dryPlants = 0;
             for (PlantReading plant : plants) {
-                if (plant.getSoilHumidity() < 30) {
+                PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
+                if (plant.getSoilHumidity() < profile.drySoil) {
                     dryPlants++;
                 }
             }
@@ -110,6 +113,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final TextView plantName;
         private final TextView humidityTank;
         private final TextView statusChip;
+        private final PlantSettingsManager settingsManager;
 
         PlantRowViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -117,14 +121,16 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
             plantName = itemView.findViewById(R.id.text_plant_name);
             humidityTank = itemView.findViewById(R.id.text_humidity_tank);
             statusChip = itemView.findViewById(R.id.chip_status);
+            settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
         void bind(PlantReading plant, PlantClickListener clickListener) {
+            PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
             plantName.setText(plant.getPlantName());
             humidityTank.setText(String.format(Locale.getDefault(), "Humidity: %d%%  |  Tank: %d%%",
                     plant.getSoilHumidity(), plant.getWaterTank()));
-            PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity());
+            PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
 
             itemView.setOnClickListener(v -> clickListener.onPlantClicked(plant));
         }

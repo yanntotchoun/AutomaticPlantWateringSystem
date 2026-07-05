@@ -194,13 +194,15 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
 
         void bind(PlantReading plant, Set<String> expandedPlantNames, PlantClickListener clickListener) {
+            PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
+
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
             plantName.setText(plant.getPlantName());
-            PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity());
+            PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
             PlantViewBinder.bindDropletBar(dropletContainer, plant.getSoilHumidity());
 
             humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
-            humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity()));
+            humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
 
             lastWatered.setText(DashboardUtils.formatRelativeLastWateredTime(
                     plant.getLastWateredTimeMillis(), System.currentTimeMillis()));
@@ -211,7 +213,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     isExpanded ? R.string.hide_plant_information : R.string.show_plant_information);
 
             if (isExpanded) {
-                PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank());
+                PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
                 if (settingsManager.useFahrenheit()) {
                     temperature.setText(String.format(Locale.getDefault(), "%d\u00B0F",
                             plant.getTemperatureFahrenheit()));

@@ -25,25 +25,45 @@ public class PlantViewModel extends ViewModel {
                 72,
                 70,
                 23,
-                now - 10 * 60 * 1000L
+                now - 10 * 60 * 1000L,
+                "standard"
         ));
         plants.add(new PlantReading(
                 "Tomato",
                 38,
                 40,
                 24,
-                now - 2 * 60 * 60 * 1000L
+                now - 2 * 60 * 60 * 1000L,
+                "tropical"
         ));
         plants.add(new PlantReading(
                 "Mint",
                 19,
                 20,
                 22,
-                now - 2L * 24 * 60 * 60 * 1000L
+                now - 2L * 24 * 60 * 60 * 1000L,
+                "succulent"
         ));
     }
 
     public List<PlantReading> getPlants() {
         return plants;
+    }
+
+    public void updatePlantThreshold(String plantName, String newThresholdId) {
+        for (int i = 0; i < plants.size(); i++) {
+            PlantReading p = plants.get(i);
+            if (p.getPlantName().equals(plantName)) {
+                plants.set(i, new PlantReading(
+                        p.getPlantName(),
+                        p.getSoilHumidity(),
+                        p.getWaterTank(),
+                        p.getTemperature(),
+                        p.getLastWateredTimeMillis(),
+                        newThresholdId
+                ));
+                break;
+            }
+        }
     }
 }
