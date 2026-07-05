@@ -5,7 +5,6 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 
 import com.yourteam.plantwatering.data.PlantReading;
 import com.yourteam.plantwatering.ui.dashboard.DashboardFragment;
@@ -61,7 +60,14 @@ public class MainActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             showTabFragment(new DashboardFragment());
         }
+
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            // If we returned to a tab fragment from the details, show the bottom nav again.
+            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+                bottomNavigationView.setVisibility(android.view.View.VISIBLE);
             }
+        });
+    }
 
     /**
      * Swaps the visible tab fragment without adding it to the back stack,
@@ -100,7 +106,6 @@ public class MainActivity extends AppCompatActivity
                 .addToBackStack(DETAILS_BACK_STACK_TAG)
                 .commit();
     }
-
     @Override
     public void onPlantClicked(PlantReading plant) {
         openPlantDetails(plant);

@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.yourteam.plantwatering.MainActivity;
 import com.yourteam.plantwatering.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.Slider;
@@ -50,8 +51,12 @@ public class SettingsFragment extends BaseFragment {
         setUpNotifications(view);
 
         view.findViewById(R.id.button_back).setOnClickListener(v -> {
-            if (getActivity() != null) {
-                getActivity().onBackPressed();
+            if (getActivity() instanceof MainActivity) {
+                MainActivity activity = (MainActivity) getActivity();
+                View navView = activity.findViewById(R.id.bottom_navigation);
+                if (navView != null) {
+                    navView.findViewById(R.id.nav_dashboard).performClick();
+                }
             }
         });
     }

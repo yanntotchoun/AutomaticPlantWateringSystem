@@ -103,7 +103,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final TextView title;
         private final TextView subtitle;
         private final LinearLayout rowsContainer;
-        PlantSettingsManager settingsManager;
+        private final PlantSettingsManager settingsManager;
 
         SummaryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -175,7 +175,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final ImageView bucket;
         private final TextView waterTankPercent;
         private final TextView temperature;
-        private PlantSettingsManager settingsManager;
+        private final PlantSettingsManager settingsManager;
 
         PlantViewHolder(@NonNull View itemView) {
             super(itemView);
