@@ -10,17 +10,13 @@ import com.yourteam.plantwatering.R;
 
 import java.util.Locale;
 
-/**
- * Static helpers that bind the small reusable pieces shared across screens.
- * Ported from PlantAvatar, StatusChip, HumidityDropletBar, and WaterTankRow
- * (originally @Composable functions in the shared components file).
- */
+
 public final class PlantViewBinder {
 
     private PlantViewBinder() {
     }
 
-    /** Ported from PlantAvatar: circle showing the first letter of the plant name. */
+
     public static void bindAvatar(TextView avatarView, String plantName) {
         String initial = (plantName == null || plantName.isEmpty())
                 ? "?"
@@ -28,7 +24,6 @@ public final class PlantViewBinder {
         avatarView.setText(initial);
     }
 
-    /** Ported from StatusChip: label + colors based on humidity severity. */
     public static void bindStatusChip(TextView chipView, int humidity, int dryThreshold) {
         chipView.setText(DashboardUtils.humidityStatusLabel(humidity, dryThreshold));
         chipView.setTextColor(DashboardUtils.humidityTextColor(humidity, dryThreshold));
@@ -41,11 +36,7 @@ public final class PlantViewBinder {
         }
     }
 
-    /**
-     * Ported from HumidityDropletBar: fills the given container with 10 droplet
-     * ImageViews, showing filled vs. empty based on the humidity percentage.
-     * Call this on bind (not just once) since RecyclerView rows are recycled.
-     */
+
     public static void bindDropletBar(LinearLayout container, int humidityPercentage) {
         Context context = container.getContext();
         int filledCount = DashboardUtils.filledDropletCount(humidityPercentage);
@@ -64,7 +55,7 @@ public final class PlantViewBinder {
         }
     }
 
-    /** Ported from WaterTankRow: bucket icon + colored percentage text. */
+
     public static void bindWaterTank(ImageView bucketView, TextView percentView, int waterTank, int fullThreshold) {
         bucketView.setImageResource(
                 waterTank >= fullThreshold ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail

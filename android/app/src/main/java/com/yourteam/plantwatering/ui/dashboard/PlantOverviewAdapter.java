@@ -15,10 +15,7 @@ import com.yourteam.plantwatering.data.PlantReading;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Backs OverviewFragment's RecyclerView: an intro summary card (position 0)
- * followed by one row per plant. Ported from PlantOverviewScreen.kt.
- */
+
 public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int VIEW_TYPE_INTRO = 0;
@@ -66,7 +63,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
-    /** Ported from OverviewIntroCard.kt. */
+
     static class IntroViewHolder extends RecyclerView.ViewHolder {
         private final TextView title;
         private final TextView subtitle;
@@ -107,7 +104,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
-    /** Ported from PlantOverviewRow.kt. */
+
     static class PlantRowViewHolder extends RecyclerView.ViewHolder {
         private final TextView avatar;
         private final TextView plantName;

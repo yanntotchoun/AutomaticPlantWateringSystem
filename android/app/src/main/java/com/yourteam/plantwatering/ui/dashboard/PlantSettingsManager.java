@@ -3,12 +3,6 @@ package com.yourteam.plantwatering.ui.dashboard;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-/**
- * Reads and writes app settings via SharedPreferences.
- * Ported from the persistence logic embedded in SettingsScreen.kt.
- * The Compose UI (Slider, Switch, RadioButton, etc.) around this logic
- * has no Java equivalent and isn't included here — see the accompanying note.
- */
 public class PlantSettingsManager {
 
     private static final String SETTINGS_FILE = "plant_app_settings";

@@ -16,10 +16,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.yourteam.plantwatering.R;
 import com.yourteam.plantwatering.data.PlantReading;
 
-/** Ported from PlantOverviewScreen.kt. */
+
 public class OverviewFragment extends BaseFragment {
 
-    /** Same shape as DashboardFragment.PlantClickListener - MainActivity implements both. */
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
     }
@@ -52,6 +51,7 @@ public class OverviewFragment extends BaseFragment {
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.overview_title);
         ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.overview_subtitle);
+
 
         applyStatusBarInset(header);
 

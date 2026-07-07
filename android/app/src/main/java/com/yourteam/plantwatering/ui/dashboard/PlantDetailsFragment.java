@@ -21,11 +21,6 @@ import com.google.android.material.button.MaterialButton;
 
 import java.util.Locale;
 
-/**
- * Ported from PlantDetailsScreen.kt. Takes the clicked PlantReading as a
- * Parcelable fragment argument (the Java/Views equivalent of Compose passing
- * `plant: PlantReading` as a parameter).
- */
 public class PlantDetailsFragment extends Fragment {
 
     private static final String ARG_PLANT = "arg_plant";
@@ -124,10 +119,7 @@ public class PlantDetailsFragment extends Fragment {
         backButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
     }
 
-    /**
-     * Ported from RelativeLastWateredRow's LaunchedEffect(Unit) { while (true) { ...; delay(60_000L) } }.
-     * Updates the "last watered" label every minute while the view is alive.
-     */
+
     private void startLastWateredRefreshLoop() {
         refreshRunnable = new Runnable() {
             @Override

@@ -37,6 +37,24 @@
     <string name="plant_recommendation">Plant recommendation</string>
     <string name="back_to_dashboard">Back to dashboard</string>
 
+    <!-- AddPlant -->
+    <string name="add_plant_title">Plant Adding</string>
+    <string name="add_plant_subtitle">Add new plants here</string>
+    <string name="device_pairing">Device pairing</string>
+    <string name="mcu_not_connected">Not connected</string>
+    <string name="mcu_connected">Connected to %1$s</string>
+    <string name="connect_to_mcu">Connect to MCU</string>
+    <string name="plant_details">Plant Details</string>
+    <string name="plant_name_hint">Plant Name</string>
+    <string name="plant_type_hint">Plant Type (e.g. Succulent)</string>
+    <string name="save_plant">Save Plant</string>
+    <string name="watering_frequency_hint">Watering Frequency (days)</string>
+    <string name="add_plant_intro">Enter your plant details and connect to your watering device to start monitoring.</string>
+    <string name="cancel">Cancel</string>
+    <string name="sensor_readings_note">Note: Sensor readings will appear once the device is connected.</string>
+
+
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">App preferences and configuration</string>

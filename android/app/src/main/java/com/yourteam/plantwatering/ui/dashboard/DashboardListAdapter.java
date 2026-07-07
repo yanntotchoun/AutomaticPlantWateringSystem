@@ -18,13 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Backs DashboardFragment's RecyclerView with three row types, mirroring the
- * `item { HeaderSection() } / item { SummaryCard(...) } / items(filteredPlants) { ... }`
- * structure of the original LazyColumn in DashboardContent.kt. (HeaderSection and the
- * search bar are handled outside the RecyclerView in fragment_dashboard.xml instead,
- * since a search EditText inside a recycled row is fragile.)
- */
+
 public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int VIEW_TYPE_SUMMARY = 0;
@@ -98,7 +92,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         // EmptyViewHolder has no dynamic content to bind.
     }
 
-    /** Ported from SummaryCard.kt. */
     static class SummaryViewHolder extends RecyclerView.ViewHolder {
         private final TextView title;
         private final TextView subtitle;
@@ -162,7 +155,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
-    /** Ported from PlantCard.kt. */
+
     static class PlantViewHolder extends RecyclerView.ViewHolder {
         private final TextView avatar;
         private final TextView plantName;

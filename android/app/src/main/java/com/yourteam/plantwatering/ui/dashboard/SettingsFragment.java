@@ -26,12 +26,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Ported from SettingsScreen.kt. All persistence goes through PlantSettingsManager
- * (the SharedPreferences logic extracted earlier), so this fragment only wires up
- * the Views and reflects/saves state exactly like the Compose version's remember +
- * sharedPreferences.edit() calls did.
- */
+
 public class SettingsFragment extends BaseFragment {
 
     private PlantSettingsManager settingsManager;
@@ -71,7 +66,6 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
-    /** Ported from the "Units" SettingsSectionCard + TemperatureUnitOption rows. */
     private void setUpTemperatureUnit(View view) {
         RadioGroup radioGroup = view.findViewById(R.id.radio_group_temperature_unit);
         boolean isCelsius = "Celsius".equals(settingsManager.getTemperatureUnit());
@@ -84,7 +78,6 @@ public class SettingsFragment extends BaseFragment {
     }
 
 
-    /** Ported from the "Thresholds" SettingsSectionCard + two Sliders. */
     private void setUpThresholds(View view) {
         TextView drySoilLabel = view.findViewById(R.id.text_dry_soil_threshold);
         Slider drySoilSlider = view.findViewById(R.id.slider_dry_soil_threshold);
@@ -231,7 +224,6 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
-    /** Ported from the "Notifications" SettingsSectionCard + three SettingsSwitchRows. */
     private void setUpNotifications(View view) {
         View enabledRow = view.findViewById(R.id.row_notifications_enabled);
         View humidityRow = view.findViewById(R.id.row_low_humidity_alerts);
@@ -269,10 +261,7 @@ public class SettingsFragment extends BaseFragment {
                 settingsManager.setLowTankAlertsEnabled(isChecked));
     }
 
-    /**
-     * Ported from `enabled = notificationsEnabled` on the two dependent SettingsSwitchRows,
-     * including the dimmed text color used when a row is disabled.
-     */
+
     private void applyDependentEnabledState(View humidityRow, View tankRow,
                                             SwitchMaterial humiditySwitch, SwitchMaterial tankSwitch,
                                             boolean enabled) {

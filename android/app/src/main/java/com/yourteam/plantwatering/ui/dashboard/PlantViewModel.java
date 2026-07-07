@@ -7,11 +7,7 @@ import com.yourteam.plantwatering.data.PlantReading;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Activity-scoped ViewModel shared by all fragments (Dashboard, Overview, Details).
- * Ported from the sample plant list that lived inside PlantDashboardScreen()'s
- * `remember { listOf(...) }` block.
- */
+
 public class PlantViewModel extends ViewModel {
 
     private final List<PlantReading> plants;

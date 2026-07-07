@@ -7,30 +7,18 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import com.yourteam.plantwatering.data.PlantReading;
+import com.yourteam.plantwatering.ui.dashboard.AddPlantFragment;
 import com.yourteam.plantwatering.ui.dashboard.DashboardFragment;
 import com.yourteam.plantwatering.ui.dashboard.OverviewFragment;
 import com.yourteam.plantwatering.ui.dashboard.PlantDetailsFragment;
 import com.yourteam.plantwatering.ui.dashboard.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-/**
- * Single Activity hosting all screens as Fragments, with a persistent
- * BottomNavigationView. This replaces PlantDashboardScreen()'s Scaffold +
- * `when (currentScreen)` switch + `selectedPlant` state from the Compose version.
- *
- * Navigation model:
- * - The three bottom nav tabs (Dashboard, Overview, Settings) swap the fragment
- *   in fragment_container and are NOT added to the back stack (matches Compose's
- *   behavior, where switching tabs didn't build up a back history).
- * - Tapping a plant card (from Dashboard or Overview) opens PlantDetailsFragment
- *   ON TOP of the current tab and IS added to the back stack, and the bottom nav
- *   is hidden while viewing details (matching `if (selectedPlant != null)` fully
- *   replacing the Scaffold in Compose). Pressing back or "Back to dashboard"
- *   returns to whichever tab was showing before.
- */
+
 public class MainActivity extends AppCompatActivity
         implements DashboardFragment.PlantClickListener,
-        OverviewFragment.PlantClickListener {
+        OverviewFragment.PlantClickListener,
+        AddPlantFragment.PlantClickListener {
 
     private BottomNavigationView bottomNavigationView;
 
@@ -52,6 +40,9 @@ public class MainActivity extends AppCompatActivity
                 return true;
             } else if (itemId == R.id.nav_settings) {
                 showTabFragment(new SettingsFragment());
+                return true;
+            } else if (itemId == R.id.nav_add_plant) {
+                showTabFragment(new AddPlantFragment());
                 return true;
             }
             return false;
@@ -89,12 +80,7 @@ public class MainActivity extends AppCompatActivity
 
     private static final String DETAILS_BACK_STACK_TAG = "plant_details";
 
-    /**
-     * Opens PlantDetailsFragment for the given plant, hides the bottom nav
-     * (matching Compose's `if (selectedPlant != null)` branch, which fully
-     * replaced the Scaffold), and adds the transaction to the back stack so
-     * the system back button returns to the previous tab.
-     */
+
     private void openPlantDetails(PlantReading plant) {
         PlantDetailsFragment detailsFragment = PlantDetailsFragment.newInstance(plant);
 
@@ -110,4 +96,5 @@ public class MainActivity extends AppCompatActivity
     public void onPlantClicked(PlantReading plant) {
         openPlantDetails(plant);
     }
+
 }

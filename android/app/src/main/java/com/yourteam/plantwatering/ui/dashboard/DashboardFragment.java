@@ -23,14 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Ported from the Dashboard branch of PlantDashboardScreen.kt (DashboardContent()).
- * Header + search bar live directly in the fragment layout; the search-filtered
- * summary card, plant cards, and empty state are handled by DashboardListAdapter.
- */
+
 public class DashboardFragment extends BaseFragment {
 
-    /** Same shape as OverviewFragment.PlantClickListener - MainActivity implements both. */
+
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
     }

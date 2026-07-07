@@ -4,21 +4,6 @@ import android.graphics.Color;
 
 import com.yourteam.plantwatering.data.PlantReading;
 
-/**
- * Plain (non-UI) logic ported from PlantSearchBar.kt.
- *
- * NOTE: The original file also contained Jetpack Compose @Composable functions
- * (PlantSearchBar, SummaryRow, PlantAvatar, StatusChip, HumidityDropletBar,
- * WaterTankRow, InfoRow, RelativeLastWateredRow). Compose is a Kotlin-only
- * framework (it depends on the Kotlin compiler plugin), so those functions
- * have no direct Java equivalent and were not converted. If you need this UI
- * in a Java project, it would need to be rebuilt with classic Android Views
- * (XML layout + TextView/ImageView + an Activity/Fragment/ViewHolder), not a
- * line-by-line translation.
- *
- * What *did* convert directly, because it's pure logic with no Compose
- * dependency, is included below.
- */
 public final class DashboardUtils {
 
     private DashboardUtils() {
