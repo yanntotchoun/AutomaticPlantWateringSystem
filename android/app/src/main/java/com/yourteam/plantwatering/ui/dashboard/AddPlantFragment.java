@@ -62,7 +62,6 @@ public class AddPlantFragment extends Fragment {
             // PlantReading newPlant = new PlantReading(plantName, plantType, 0, 0, 0, 0);
                 //clickListener.onPlantClicked(newPlant);
 
-
         });
 
         //cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());

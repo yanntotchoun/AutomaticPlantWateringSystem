@@ -51,7 +51,7 @@ public class SettingsFragment extends BaseFragment {
 
         applyStatusBarInset(header);
 
-        setUpTemperatureUnit(view);
+
         setUpThresholds(view);
         setUpNotifications(view);
 
@@ -66,16 +66,6 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
-    private void setUpTemperatureUnit(View view) {
-        RadioGroup radioGroup = view.findViewById(R.id.radio_group_temperature_unit);
-        boolean isCelsius = "Celsius".equals(settingsManager.getTemperatureUnit());
-        radioGroup.check(isCelsius ? R.id.radio_celsius : R.id.radio_fahrenheit);
-
-        radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            String unit = checkedId == R.id.radio_celsius ? "Celsius" : "Fahrenheit";
-            settingsManager.setTemperatureUnit(unit);
-        });
-    }
 
 
     private void setUpThresholds(View view) {

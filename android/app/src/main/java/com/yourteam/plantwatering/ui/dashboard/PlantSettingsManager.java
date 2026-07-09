@@ -7,7 +7,6 @@ public class PlantSettingsManager {
 
     private static final String SETTINGS_FILE = "plant_app_settings";
 
-    private static final String KEY_TEMPERATURE_UNIT = "temperature_unit";
     private static final String KEY_DRY_SOIL_THRESHOLD = "dry_soil_threshold";
     private static final String KEY_FULL_TANK_THRESHOLD = "full_tank_threshold";
     private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
@@ -22,13 +21,6 @@ public class PlantSettingsManager {
         this.prefs = context.getSharedPreferences(SETTINGS_FILE, Context.MODE_PRIVATE);
     }
 
-    public String getTemperatureUnit() {
-        return prefs.getString(KEY_TEMPERATURE_UNIT, "Celsius");
-    }
-
-    public void setTemperatureUnit(String unit) {
-        prefs.edit().putString(KEY_TEMPERATURE_UNIT, unit).apply();
-    }
 
     public int getDrySoilThreshold() {
         return prefs.getInt(KEY_DRY_SOIL_THRESHOLD, 30);
@@ -70,9 +62,6 @@ public class PlantSettingsManager {
         prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply();
     }
 
-    public boolean useFahrenheit() {
-        return "Fahrenheit".equals(getTemperatureUnit());
-    }
 
     public static class ThresholdProfile {
         public final String id;

@@ -20,7 +20,6 @@ public class PlantViewModel extends ViewModel {
                 "Basil",
                 72,
                 70,
-                23,
                 now - 10 * 60 * 1000L,
                 "standard"
         ));
@@ -28,7 +27,6 @@ public class PlantViewModel extends ViewModel {
                 "Tomato",
                 38,
                 40,
-                24,
                 now - 2 * 60 * 60 * 1000L,
                 "tropical"
         ));
@@ -36,7 +34,6 @@ public class PlantViewModel extends ViewModel {
                 "Mint",
                 19,
                 20,
-                22,
                 now - 2L * 24 * 60 * 60 * 1000L,
                 "succulent"
         ));
@@ -54,7 +51,6 @@ public class PlantViewModel extends ViewModel {
                         p.getPlantName(),
                         p.getSoilHumidity(),
                         p.getWaterTank(),
-                        p.getTemperature(),
                         p.getLastWateredTimeMillis(),
                         newThresholdId
                 ));

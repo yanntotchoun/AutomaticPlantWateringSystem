@@ -112,23 +112,15 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             int avgHumidity = 0;
             int avgTank = 0;
-            int avgTemp = 0;
             if (!plants.isEmpty()) {
                 long sumHumidity = 0;
                 long sumTank = 0;
-                long sumTemp = 0;
                 for (PlantReading plant : plants) {
                     sumHumidity += plant.getSoilHumidity();
                     sumTank += plant.getWaterTank();
-                    if (settingsManager.useFahrenheit()) {
-                        sumTemp += plant.getTemperatureFahrenheit();
-                    } else {
-                        sumTemp += plant.getTemperature();
-                    }
                 }
                 avgHumidity = Math.round((float) sumHumidity / plants.size());
                 avgTank = Math.round((float) sumTank / plants.size());
-                avgTemp = Math.round((float) sumTemp / plants.size());
             }
 
             rowsContainer.removeAllViews();
@@ -137,8 +129,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             addRow(inflater, itemView.getContext().getString(R.string.plants_shown), String.valueOf(plants.size()));
             addRow(inflater, itemView.getContext().getString(R.string.average_soil_humidity), avgHumidity + "%");
             addRow(inflater, itemView.getContext().getString(R.string.average_tank_level), avgTank + "%");
-            String tempUnit = settingsManager.useFahrenheit() ? "\u00B0F" : "\u00B0C";
-            addRow(inflater, itemView.getContext().getString(R.string.average_temperature), avgTemp + tempUnit);
         }
 
         private void addRow(LayoutInflater inflater, String label, String value) {
@@ -167,7 +157,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final View expandableSection;
         private final ImageView bucket;
         private final TextView waterTankPercent;
-        private final TextView temperature;
         private final PlantSettingsManager settingsManager;
 
         PlantViewHolder(@NonNull View itemView) {
@@ -182,7 +171,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             expandableSection = itemView.findViewById(R.id.expandable_section);
             bucket = itemView.findViewById(R.id.image_bucket);
             waterTankPercent = itemView.findViewById(R.id.text_water_tank_percent);
-            temperature = itemView.findViewById(R.id.text_temperature);
             settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
@@ -207,13 +195,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
-                if (settingsManager.useFahrenheit()) {
-                    temperature.setText(String.format(Locale.getDefault(), "%d\u00B0F",
-                            plant.getTemperatureFahrenheit()));
-                } else {
-                    temperature.setText(String.format(Locale.getDefault(), "%d\u00B0C",
-                            plant.getTemperature()));
-                }
+
             }
 
             toggleButton.setOnClickListener(v -> {

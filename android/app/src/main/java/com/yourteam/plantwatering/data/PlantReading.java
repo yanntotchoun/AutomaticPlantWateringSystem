@@ -16,7 +16,6 @@ public class PlantReading implements Parcelable {
     private final String plantName;
     private final int soilHumidity;
     private final int waterTank;
-    private final int temperature;
     private final long lastWateredTimeMillis;
     private final String thresholdId;
 
@@ -24,14 +23,12 @@ public class PlantReading implements Parcelable {
             String plantName,
             int soilHumidity,
             int waterTank,
-            int temperature,
             long lastWateredTimeMillis,
             String thresholdId
     ) {
         this.plantName = plantName;
         this.soilHumidity = soilHumidity;
         this.waterTank = waterTank;
-        this.temperature = temperature;
         this.lastWateredTimeMillis = lastWateredTimeMillis;
         this.thresholdId = thresholdId;
     }
@@ -40,7 +37,6 @@ public class PlantReading implements Parcelable {
         plantName = in.readString();
         soilHumidity = in.readInt();
         waterTank = in.readInt();
-        temperature = in.readInt();
         lastWateredTimeMillis = in.readLong();
         thresholdId = in.readString();
     }
@@ -69,14 +65,6 @@ public class PlantReading implements Parcelable {
         return waterTank;
     }
 
-    public int getTemperature() {
-        return temperature;
-    }
-
-    public int getTemperatureFahrenheit() {
-        return (int) (temperature * 9.0 / 5.0 + 32);
-    }
-
     public long getLastWateredTimeMillis() {
         return lastWateredTimeMillis;
     }
@@ -96,7 +84,6 @@ public class PlantReading implements Parcelable {
         dest.writeString(plantName);
         dest.writeInt(soilHumidity);
         dest.writeInt(waterTank);
-        dest.writeInt(temperature);
         dest.writeLong(lastWateredTimeMillis);
         dest.writeString(thresholdId);
     }

@@ -188,32 +188,6 @@
                     tools:textColor="@color/status_healthy_text" />
             </LinearLayout>
 
-            <!-- Temperature row (InfoRow equivalent) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/temperature"
-                    android:textColor="@color/text_gray_555"
-                    android:textSize="17sp" />
-
-                <TextView
-                    android:id="@+id/text_temperature"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:textColor="@color/text_dark"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    tools:text="23°C" />
-            </LinearLayout>
-
         </LinearLayout>
 
     </LinearLayout>

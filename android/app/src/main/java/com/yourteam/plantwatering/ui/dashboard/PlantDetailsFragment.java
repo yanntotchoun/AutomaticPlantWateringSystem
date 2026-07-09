@@ -83,21 +83,13 @@ public class PlantDetailsFragment extends Fragment {
         humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
         humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
 
-        // Water tank + temperature
+        // Water tank
         PlantViewBinder.bindWaterTank(
                 view.findViewById(R.id.image_bucket),
                 view.findViewById(R.id.text_water_tank_percent),
                 plant.getWaterTank(),
                 profile.fullTank
         );
-
-        int tempValue = plant.getTemperature();
-        String tempUnit = "\u00B0C";
-        if (settingsManager.useFahrenheit()) {
-            tempValue = (tempValue * 9 / 5) + 32;
-            tempUnit = "\u00B0F";
-        }
-        ((TextView) view.findViewById(R.id.text_temperature)).setText(tempValue + tempUnit);
 
         // Last watered - refreshed periodically, matching RelativeLastWateredRow's LaunchedEffect loop
         lastWateredText = view.findViewById(R.id.text_last_watered);
