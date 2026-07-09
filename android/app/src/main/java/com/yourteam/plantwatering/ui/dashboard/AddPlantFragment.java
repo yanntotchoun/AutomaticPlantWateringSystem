@@ -20,7 +20,7 @@ import com.yourteam.plantwatering.data.PlantReading;
 
 
 public class AddPlantFragment extends Fragment {
-    EditText name,type;
+    EditText name;
     Button saveButton,cancelButton,connectButton;
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
@@ -45,7 +45,6 @@ public class AddPlantFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         name = view.findViewById(R.id.edit_plant_name);
-        type = view.findViewById(R.id.edit_plant_type);
         saveButton = view.findViewById(R.id.button_save_plant);
         cancelButton = view.findViewById(R.id.button_cancel_add_plant);
         connectButton = view.findViewById(R.id.button_connect_mcu);
@@ -56,7 +55,7 @@ public class AddPlantFragment extends Fragment {
 
         saveButton.setOnClickListener(v -> {
             String plantName = name.getText().toString();
-            String plantType = type.getText().toString();
+ 
 
 
             // PlantReading newPlant = new PlantReading(plantName, plantType, 0, 0, 0, 0);

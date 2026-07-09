@@ -69,28 +69,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Plant type -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    app:boxCornerRadiusBottomEnd="18dp"
-                    app:boxCornerRadiusBottomStart="18dp"
-                    app:boxCornerRadiusTopEnd="18dp"
-                    app:boxCornerRadiusTopStart="18dp"
-                    app:hintEnabled="true"
-                    app:hintTextColor="@color/text_gray_555">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edit_plant_type"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/plant_type_hint"
-                        android:inputType="textCapWords"
-                        android:maxLines="1" />
-
-                </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
