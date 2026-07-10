@@ -2,6 +2,8 @@ package com.yourteam.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -35,6 +37,20 @@ public class DashboardFragment extends BaseFragment {
     private PlantViewModel viewModel;
     private DashboardListAdapter adapter;
     private List<PlantReading> allPlants;
+
+    private boolean userInterfaceUpdateNeeded = false;
+    private final Handler executeRunnable = new Handler(Looper.getMainLooper());
+    private final Runnable updateUI = new Runnable() {
+        @Override
+        public void run() {
+            if (!userInterfaceUpdateNeeded) return;
+
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+            executeRunnable.postDelayed(this, 60_000);
+        }
+    };
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -92,6 +108,19 @@ public class DashboardFragment extends BaseFragment {
         });
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        userInterfaceUpdateNeeded = true;
+        executeRunnable.post(updateUI);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        userInterfaceUpdateNeeded = false;
+    }
+
     private void filterPlants(String searchText) {
         String query = searchText.toLowerCase(Locale.getDefault());
         List<PlantReading> filtered = new ArrayList<>();
@@ -103,3 +132,4 @@ public class DashboardFragment extends BaseFragment {
         adapter.updatePlants(filtered);
     }
 }
+
