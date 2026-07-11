@@ -74,7 +74,7 @@ public class DashboardFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
-        allPlants = viewModel.getPlants();
+        allPlants = new ArrayList<>();
 
         // Initialize default threshold profiles
         new PlantSettingsManager(requireContext()).initDefaultProfiles();
@@ -92,6 +92,13 @@ public class DashboardFragment extends BaseFragment {
         recyclerView.setAdapter(adapter);
 
         TextInputEditText searchEdit = view.findViewById(R.id.edit_search);
+
+        // Observe LiveData from Firebase
+        viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
+            allPlants = plants;
+            filterPlants(searchEdit.getText() != null ? searchEdit.getText().toString() : "");
+        });
+
         searchEdit.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {

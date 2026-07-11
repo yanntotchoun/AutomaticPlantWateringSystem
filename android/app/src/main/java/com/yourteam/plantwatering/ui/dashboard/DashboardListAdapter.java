@@ -157,6 +157,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final View expandableSection;
         private final ImageView bucket;
         private final TextView waterTankPercent;
+        private final TextView connectionStatus;
         private final PlantSettingsManager settingsManager;
 
         PlantViewHolder(@NonNull View itemView) {
@@ -171,6 +172,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             expandableSection = itemView.findViewById(R.id.expandable_section);
             bucket = itemView.findViewById(R.id.image_bucket);
             waterTankPercent = itemView.findViewById(R.id.text_water_tank_percent);
+            connectionStatus = itemView.findViewById(R.id.text_connection_status);
             settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
@@ -196,6 +198,13 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
 
+                if (plant.isOnline()) { //The connection status appears here when the user clicks on "show plant information".
+                    connectionStatus.setText("Online");
+                    connectionStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
+                } else {
+                    connectionStatus.setText("Offline");
+                    connectionStatus.setTextColor(android.graphics.Color.parseColor("#9C1C16"));
+                }
             }
 
             toggleButton.setOnClickListener(v -> {

@@ -3,14 +3,6 @@ package com.yourteam.plantwatering.data;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/**
- * Plain Java model for a single plant's sensor reading.
- * Inferred from field usage in the Kotlin Compose files
- * (plantName, soilHumidity, waterTank, temperature, lastWateredTimeMillis).
- * Implements Parcelable so a clicked plant can be passed from DashboardFragment
- * to PlantDetailsFragment via a Bundle argument (the Java/Views equivalent of
- * Compose's `var selectedPlant by remember { mutableStateOf<PlantReading?>(null) }`).
- */
 public class PlantReading implements Parcelable {
 
     private final String plantName;
@@ -18,19 +10,22 @@ public class PlantReading implements Parcelable {
     private final int waterTank;
     private final long lastWateredTimeMillis;
     private final String thresholdId;
+    private final long lastSeenMillis;
 
     public PlantReading(
             String plantName,
             int soilHumidity,
             int waterTank,
             long lastWateredTimeMillis,
-            String thresholdId
+            String thresholdId,
+            long lastSeenMillis
     ) {
         this.plantName = plantName;
         this.soilHumidity = soilHumidity;
         this.waterTank = waterTank;
         this.lastWateredTimeMillis = lastWateredTimeMillis;
         this.thresholdId = thresholdId;
+        this.lastSeenMillis = lastSeenMillis;
     }
 
     protected PlantReading(Parcel in) {
@@ -39,6 +34,7 @@ public class PlantReading implements Parcelable {
         waterTank = in.readInt();
         lastWateredTimeMillis = in.readLong();
         thresholdId = in.readString();
+        lastSeenMillis = in.readLong();
     }
 
     public static final Creator<PlantReading> CREATOR = new Creator<PlantReading>() {
@@ -73,6 +69,16 @@ public class PlantReading implements Parcelable {
         return thresholdId;
     }
 
+    public long getLastSeenMillis() {
+        return lastSeenMillis;
+    }
+
+    public boolean isOnline() {
+        // When the plant is first added, the connection status will be set to online if seen in the last 2 minutes.
+        // The user then has two minutes to connect the MCU before the status switches to offline.
+        return (System.currentTimeMillis() - lastSeenMillis) < 120_000L;
+    }
+
 
     @Override
     public int describeContents() {
@@ -86,5 +92,6 @@ public class PlantReading implements Parcelable {
         dest.writeInt(waterTank);
         dest.writeLong(lastWateredTimeMillis);
         dest.writeString(thresholdId);
+        dest.writeLong(lastSeenMillis);
     }
 }

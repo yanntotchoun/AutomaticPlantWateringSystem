@@ -57,9 +57,14 @@ public class OverviewFragment extends BaseFragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_overview);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        recyclerView.setAdapter(new PlantOverviewAdapter(
-                viewModel.getPlants(),
+        
+        java.util.List<PlantReading> plants = new java.util.ArrayList<>();
+        PlantOverviewAdapter adapter = new PlantOverviewAdapter(
+                plants,
                 plant -> clickListener.onPlantClicked(plant)
-        ));
+        );
+        recyclerView.setAdapter(adapter);
+
+        viewModel.getPlants().observe(getViewLifecycleOwner(), adapter::updatePlants);
     }
 }

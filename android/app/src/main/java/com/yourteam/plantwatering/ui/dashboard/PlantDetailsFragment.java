@@ -24,11 +24,12 @@ import java.util.Locale;
 public class PlantDetailsFragment extends Fragment {
 
     private static final String ARG_PLANT = "arg_plant";
-    private static final long REFRESH_INTERVAL_MILLIS = 60_000L;
+    private static final long REFRESH_INTERVAL_MILLIS = 10_000L;
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
     private TextView lastWateredText;
+    private TextView connectionStatusText;
     private PlantSettingsManager settingsManager;
     private PlantReading plant;
     private PlantViewModel viewModel;
@@ -61,66 +62,83 @@ public class PlantDetailsFragment extends Fragment {
         if (plant == null) {
             throw new IllegalStateException("Missing plant argument");
         }
+
         settingsManager = new PlantSettingsManager(requireContext());
-        PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
-
-        // Header
-        View header = view.findViewById(R.id.header_root);
-        ((TextView) header.findViewById(R.id.text_header_title)).setText(plant.getPlantName());
-        ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.personalized_plant_page);
-        ((TextView) header.findViewById(R.id.text_header_title)).setTextSize(32);
-
-        // Avatar + name + status message
-        PlantViewBinder.bindAvatar(view.findViewById(R.id.text_avatar), plant.getPlantName());
-        ((TextView) view.findViewById(R.id.text_plant_name)).setText(plant.getPlantName());
-        TextView statusMessage = view.findViewById(R.id.text_status_message);
-        statusMessage.setText(DashboardUtils.plantStatusMessage(plant.getSoilHumidity(), profile.drySoil));
-        statusMessage.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
-
-        // Soil humidity
-        PlantViewBinder.bindDropletBar(view.findViewById(R.id.droplet_container), plant.getSoilHumidity());
-        TextView humidityPercent = view.findViewById(R.id.text_humidity_percent);
-        humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
-        humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
-
-        // Water tank
-        PlantViewBinder.bindWaterTank(
-                view.findViewById(R.id.image_bucket),
-                view.findViewById(R.id.text_water_tank_percent),
-                plant.getWaterTank(),
-                profile.fullTank
-        );
-
-        // Last watered - refreshed periodically, matching RelativeLastWateredRow's LaunchedEffect loop
         lastWateredText = view.findViewById(R.id.text_last_watered);
-        startLastWateredRefreshLoop();
-
-        // Recommendation
-        ((TextView) view.findViewById(R.id.text_recommendation)).setText(
-                DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
-
-        // Profile info
+        connectionStatusText = view.findViewById(R.id.text_connection_status);
         currentProfileText = view.findViewById(R.id.text_current_profile);
-        currentProfileText.setText("Current: " + profile.name);
+
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
+        
+        viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
+            for (PlantReading p : plants) {
+                if (p.getPlantName().equals(plant.getPlantName())) {
+                    this.plant = p;
+                    updateUi();
+                    break;
+                }
+            }
+        });
+
+        startPeriodicRefreshLoop();
 
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
 
-        // Back button
+        view.findViewById(R.id.button_delete_plant).setOnClickListener(v -> showDeleteConfirmation()); // I added a delete button for the user. This removes the data from the firebase in real time also.
+
         MaterialButton backButton = view.findViewById(R.id.button_back);
         backButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
     }
 
+    private void updateUi() {
+        if (getView() == null || plant == null) return;
 
-    private void startLastWateredRefreshLoop() {
+        PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
+
+        View header = getView().findViewById(R.id.header_root);
+        ((TextView) header.findViewById(R.id.text_header_title)).setText(plant.getPlantName());
+        ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.personalized_plant_page);
+
+        PlantViewBinder.bindAvatar(getView().findViewById(R.id.text_avatar), plant.getPlantName());
+        ((TextView) getView().findViewById(R.id.text_plant_name)).setText(plant.getPlantName());
+        TextView statusMessage = getView().findViewById(R.id.text_status_message);
+        statusMessage.setText(DashboardUtils.plantStatusMessage(plant.getSoilHumidity(), profile.drySoil));
+        statusMessage.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
+
+        PlantViewBinder.bindDropletBar(getView().findViewById(R.id.droplet_container), plant.getSoilHumidity());
+        TextView humidityPercent = getView().findViewById(R.id.text_humidity_percent);
+        humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
+        humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
+
+        PlantViewBinder.bindWaterTank(
+                getView().findViewById(R.id.image_bucket),
+                getView().findViewById(R.id.text_water_tank_percent),
+                plant.getWaterTank(),
+                profile.fullTank
+        );
+
+        lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
+                plant.getLastWateredTimeMillis(), System.currentTimeMillis()));
+        
+        if (plant.isOnline()) {
+            connectionStatusText.setText("Online");
+            connectionStatusText.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
+        } else {
+            connectionStatusText.setText("Offline");
+            connectionStatusText.setTextColor(android.graphics.Color.parseColor("#9C1C16"));
+        }
+
+        ((TextView) getView().findViewById(R.id.text_recommendation)).setText(
+                DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
+
+        currentProfileText.setText("Current: " + profile.name);
+    }
+
+    private void startPeriodicRefreshLoop() {
         refreshRunnable = new Runnable() {
             @Override
             public void run() {
-                if (lastWateredText == null || plant == null) {
-                    return;
-                }
-                lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
-                        plant.getLastWateredTimeMillis(), System.currentTimeMillis()));
+                updateUi();
                 refreshHandler.postDelayed(this, REFRESH_INTERVAL_MILLIS);
             }
         };
@@ -134,6 +152,7 @@ public class PlantDetailsFragment extends Fragment {
             refreshHandler.removeCallbacks(refreshRunnable);
         }
         lastWateredText = null;
+        connectionStatusText = null;
         currentProfileText = null;
     }
 
@@ -149,30 +168,19 @@ public class PlantDetailsFragment extends Fragment {
                 .setItems(names, (dialog, which) -> {
                     PlantSettingsManager.ThresholdProfile selected = profiles.get(which);
                     viewModel.updatePlantThreshold(plant.getPlantName(), selected.id);
-                    // Update local UI
-                    currentProfileText.setText("Current: " + selected.name);
-                    // Refresh recommendations and colors
-                    refreshPlantData(selected);
                 })
                 .show();
     }
 
-    private void refreshPlantData(PlantSettingsManager.ThresholdProfile profile) {
-        TextView statusMessage = getView().findViewById(R.id.text_status_message);
-        statusMessage.setText(DashboardUtils.plantStatusMessage(plant.getSoilHumidity(), profile.drySoil));
-        statusMessage.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
-
-        TextView humidityPercent = getView().findViewById(R.id.text_humidity_percent);
-        humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
-
-        PlantViewBinder.bindWaterTank(
-                getView().findViewById(R.id.image_bucket),
-                getView().findViewById(R.id.text_water_tank_percent),
-                plant.getWaterTank(),
-                profile.fullTank
-        );
-
-        ((TextView) getView().findViewById(R.id.text_recommendation)).setText(
-                DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
+    private void showDeleteConfirmation() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Plant")
+                .setMessage("Are you sure you want to delete '" + plant.getPlantName() + "'? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    viewModel.deletePlant(plant.getPlantName());
+                    getParentFragmentManager().popBackStack();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }
