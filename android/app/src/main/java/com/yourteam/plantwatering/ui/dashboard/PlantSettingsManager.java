@@ -78,19 +78,21 @@ public class PlantSettingsManager {
     }
 
     public ThresholdProfile getThresholdProfile(String id) {
-        if (id == null || "standard".equals(id)) return getDefaultProfile();
+        String effectiveId = (id == null) ? "standard" : id;
         
-        String name = prefs.getString("threshold_name_" + id, null);
-        if (name == null) return getDefaultProfile();
+        String defaultName = "standard".equals(effectiveId) ? "Standard" : "Custom Profile";
+        int defaultDry = 30;
+        int defaultTank = 70;
+
+        String name = prefs.getString("threshold_name_" + effectiveId, defaultName);
+        int dry = prefs.getInt("threshold_dry_" + effectiveId, defaultDry);
+        int tank = prefs.getInt("threshold_tank_" + effectiveId, defaultTank);
         
-        int dry = prefs.getInt("threshold_dry_" + id, 30);
-        int tank = prefs.getInt("threshold_tank_" + id, 70);
-        
-        return new ThresholdProfile(id, name, dry, tank);
+        return new ThresholdProfile(effectiveId, name, dry, tank);
     }
 
     private ThresholdProfile getDefaultProfile() {
-        return new ThresholdProfile("standard", "Standard", 30, 70);
+        return getThresholdProfile("standard");
     }
 
     public void saveThresholdProfile(ThresholdProfile profile) {
