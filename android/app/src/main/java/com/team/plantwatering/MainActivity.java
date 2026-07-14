@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering;
+package com.team.plantwatering;
 
 import android.os.Bundle;
 
@@ -6,12 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.yourteam.plantwatering.data.PlantReading;
-import com.yourteam.plantwatering.ui.dashboard.AddPlantFragment;
-import com.yourteam.plantwatering.ui.dashboard.DashboardFragment;
-import com.yourteam.plantwatering.ui.dashboard.OverviewFragment;
-import com.yourteam.plantwatering.ui.dashboard.PlantDetailsFragment;
-import com.yourteam.plantwatering.ui.dashboard.SettingsFragment;
+import com.team.plantwatering.data.PlantReading;
+import com.team.plantwatering.ui.dashboard.AddPlantFragment;
+import com.team.plantwatering.ui.dashboard.DashboardFragment;
+import com.team.plantwatering.ui.dashboard.OverviewFragment;
+import com.team.plantwatering.ui.dashboard.PlantDetailsFragment;
+import com.team.plantwatering.ui.dashboard.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 

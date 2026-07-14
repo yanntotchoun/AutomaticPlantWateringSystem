@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,8 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.yourteam.plantwatering.R;
-import com.yourteam.plantwatering.data.PlantReading;
+import com.team.plantwatering.R;
+import com.team.plantwatering.data.PlantReading;
 
 import java.util.List;
 import java.util.Locale;

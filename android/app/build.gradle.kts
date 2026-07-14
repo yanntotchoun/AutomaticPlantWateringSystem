@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.yourteam.plantwatering"
+    namespace = "com.team.plantwatering"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.yourteam.plantwatering"
+        applicationId = "com.team.plantwatering"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

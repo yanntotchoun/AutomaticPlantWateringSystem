@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.os.Bundle;
 import android.text.Editable;
@@ -17,9 +17,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.textfield.TextInputEditText;
-import com.yourteam.plantwatering.MainActivity;
-import com.yourteam.plantwatering.R;
-import com.google.android.material.button.MaterialButton;
+import com.team.plantwatering.MainActivity;
+import com.team.plantwatering.R;
 import com.google.android.material.slider.Slider;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
