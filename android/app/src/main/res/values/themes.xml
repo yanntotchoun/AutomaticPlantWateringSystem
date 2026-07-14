@@ -1,9 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.AutomaticPlantWateringSystem" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <!--
+        Equivalent of the LightColorScheme + Typography passed into MaterialTheme().
+        Requires com.google.android.material:material (Material3 XML themes).
+        Dynamic color (Build.VERSION_CODES.S+) is handled automatically by
+        Theme.Material3.DynamicColors.* base themes below.
+    -->
+    <style name="Theme.PlantWateringSystem" parent="Theme.Material3.DynamicColors.Light">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="colorPrimary">@color/purple_40</item>
+        <item name="colorSecondary">@color/purple_grey_40</item>
+        <item name="colorTertiary">@color/pink_40</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.PlantApp.BodyLarge</item>
     </style>
 
-    <style name="Theme.AutomaticPlantWateringSystem" parent="Base.Theme.AutomaticPlantWateringSystem" />
+    <style name="Theme.PlantWateringSystem.Dark" parent="Theme.Material3.DynamicColors.Dark">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="colorPrimary">@color/purple_80</item>
+        <item name="colorSecondary">@color/purple_grey_80</item>
+        <item name="colorTertiary">@color/pink_80</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.PlantApp.BodyLarge</item>
+    </style>
 </resources>

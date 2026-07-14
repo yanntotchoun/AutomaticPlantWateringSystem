@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering;
+package com.team.plantwatering;
 
 import android.content.Context;
 

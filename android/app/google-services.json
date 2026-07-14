@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "639124858357",
+    "firebase_url": "https://plantwateringdatabase-default-rtdb.firebaseio.com",
+    "project_id": "plantwateringdatabase",
+    "storage_bucket": "plantwateringdatabase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:639124858357:android:651515a404e487b191ecbc",
+        "android_client_info": {
+          "package_name": "com.team.plantwatering"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6n9M0yJhekVh1fvyfnA5ZaER9Ic0WUg0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:639124858357:android:124c45e8816e2bbb91ecbc",
+        "android_client_info": {
+          "package_name": "com.yourteam.plantwatering"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6n9M0yJhekVh1fvyfnA5ZaER9Ic0WUg0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
