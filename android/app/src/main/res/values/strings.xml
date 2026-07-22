@@ -79,4 +79,20 @@
     <string name="select_profile_to_edit">Select Profile to Edit</string>
     <string name="select_profile_to_edit_hint">Double-tap a profile name to rename it</string>
     <string name="confirm_thresholds">Confirm Thresholds</string>
+    <string name="watering_reminders">Watering Reminders</string>
+    <string name="watering_reminders_desc">Receive periodic reminders to check on your plants.</string>
+    <string-array name="reminder_frequencies">
+        <item>Every day</item>
+        <item>Every 3 days</item>
+        <item>Weekly</item>
+        <item>Twice a Week</item>
+        <item>Every month</item>
+        <item>Never</item>
+    </string-array>
+
+    <!-- Notifications/Reminders -->
+    <string name="wateringreminder">Watering Reminders</string>
+    <string name="reminder_notification_title">Plant Watering Reminder</string>
+    <string name="reminder_notification_text">It\'s time to check if your plants need watering!</string>
+
 </resources>
