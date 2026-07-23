@@ -25,7 +25,7 @@ public class PlantViewModel extends ViewModel {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
 
     public PlantViewModel() {
-        databaseReference = FirebaseDatabase.getInstance().getReference("plants"); //"plants" is the name of the root node in the firebase.
+        databaseReference = FirebaseDatabase.getInstance().getReference("plants");
         startListeningForChanges();
     }
 
@@ -33,28 +33,38 @@ public class PlantViewModel extends ViewModel {
         return plantsLiveData;
     }
 
-    private void startListeningForChanges() { //The firebase starts recording the changes here in real time.
+    private void startListeningForChanges() {
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlantReading> updatedPlants = new ArrayList<>();
-                for (DataSnapshot plantSnapshot : snapshot.getChildren()) { //Every plant captured here is a child of the "plants" node which is the root node.
+                for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
                     String name = plantSnapshot.getKey();
 
-                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class); //Those are the leaves of each child node
+                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class);
                     Integer water = plantSnapshot.child("water_tank").getValue(Integer.class);
                     Long lastTimeWatered = plantSnapshot.child("last_time_watered_Millis").getValue(Long.class);
                     String thresholdProfile = plantSnapshot.child("threshold_profile").getValue(String.class);
                     Long lastSeenOnline = plantSnapshot.child("connection_status_Millis").getValue(Long.class);
 
+                    // Manual Watering Fields
+                    Boolean manualCommand = plantSnapshot.child("manual_watering_command").getValue(Boolean.class);
+                    Integer manualDuration = plantSnapshot.child("manual_watering_duration").getValue(Integer.class);
+                    String mode = plantSnapshot.child("watering_mode").getValue(String.class);
+                    Boolean pumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
 
                     int h = (moisture != null) ? moisture : 0;
                     int w = (water != null) ? water : 0;
-                    long lw = (lastTimeWatered != null) ? lastTimeWatered : 0L; //time set to current time when the plant is initiated.
+                    long lw = (lastTimeWatered != null) ? lastTimeWatered : 0L;
                     String tid = (thresholdProfile != null) ? thresholdProfile : "standard";
                     long ls = (lastSeenOnline != null) ? lastSeenOnline : 0L;
 
-                    updatedPlants.add(new PlantReading(name, h, w, lw, tid, ls));
+                    boolean mc = (manualCommand != null) && manualCommand;
+                    int md = (manualDuration != null) ? manualDuration : 5;
+                    String m = (mode != null) ? mode : "auto";
+                    boolean pa = (pumpActive != null) && pumpActive;
+
+                    updatedPlants.add(new PlantReading(name, h, w, lw, tid, ls, mc, md, m, pa));
                 }
                 plantsLiveData.setValue(updatedPlants);
             }
@@ -76,17 +86,57 @@ public class PlantViewModel extends ViewModel {
 
         newPlantRef.child("moisture_level").setValue(0);
         newPlantRef.child("water_tank").setValue(0);
-        
-        newPlantRef.child("last_time_watered_Millis").setValue(now); //This format (Millis Unix timestamp,
-                                                                   // is the seconds passed since January 1st 1970 until now in UTC(Coordinated Universal Time).
-                                                                             // It is easier for the Arduino to read. This maintains O(1) time complexity.
-
-        newPlantRef.child("last_time_watered").setValue(readableTime); //This format is easier for us to read and debug on the firebase.
-
+        newPlantRef.child("last_time_watered_Millis").setValue(now);
+        newPlantRef.child("last_time_watered").setValue(readableTime);
         newPlantRef.child("threshold_profile").setValue("standard");
-
         newPlantRef.child("connection_status_Millis").setValue(now);
         newPlantRef.child("connection_status").setValue(readableTime);
+
+        // Initialize Manual Watering Fields
+        newPlantRef.child("manual_watering_command").setValue(false);
+        newPlantRef.child("manual_watering_duration").setValue(5); // Default 5 seconds
+        newPlantRef.child("watering_mode").setValue("auto");
+        newPlantRef.child("is_pump_active").setValue(false);
+    }
+
+    private static final int MAX_WATERING_DURATION = 60; // Max 60 seconds for safety
+
+    /**
+     * Sends a command to the MCU to start watering the plant manually.
+     * Enforces a maximum duration to prevent flooding.
+     */
+    public void requestManualWatering(String plantName, int durationSeconds) {
+        int safeDuration = Math.min(durationSeconds, MAX_WATERING_DURATION);
+        
+        DatabaseReference plantRef = databaseReference.child(plantName);
+        plantRef.child("manual_watering_duration").setValue(safeDuration);
+        plantRef.child("manual_watering_command").setValue(true);
+
+        // BSCK-8.3: Log the request for history
+        String logTime = dateFormat.format(new Date());
+        DatabaseReference logRef = plantRef.child("logs").push();
+        logRef.child("event").setValue("Manual watering requested");
+        logRef.child("duration").setValue(safeDuration);
+        logRef.child("timestamp").setValue(logTime);
+    }
+
+    /**
+     * Immediately requests the MCU to stop watering.
+     */
+    public void stopManualWatering(String plantName) {
+        databaseReference.child(plantName).child("manual_watering_command").setValue(false);
+        
+        // Log the stop event
+        DatabaseReference logRef = databaseReference.child(plantName).child("logs").push();
+        logRef.child("event").setValue("Manual watering stopped early");
+        logRef.child("timestamp").setValue(dateFormat.format(new Date()));
+    }
+
+    /**
+     * Switches the plant between 'auto' and 'manual' watering modes.
+     */
+    public void updateWateringMode(String plantName, String mode) {
+        databaseReference.child(plantName).child("watering_mode").setValue(mode);
     }
 
     public void deletePlant(String name) {

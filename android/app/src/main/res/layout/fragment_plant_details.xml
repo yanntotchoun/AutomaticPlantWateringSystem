@@ -237,6 +237,55 @@
                     android:text="Change Profile"
                     android:textAllCaps="false" />
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="20dp"
+                    android:background="@color/divider_gray" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Manual Control"
+                    android:textColor="@color/text_dark"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layout_manual_controls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_water_now"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Water Now (5s)"
+                        app:icon="@drawable/drop_filled" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_stop_watering"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Stop Watering"
+                        android:textColor="#9C1C16"
+                        android:visibility="gone"
+                        app:strokeColor="#9C1C16" />
+
+                    <TextView
+                        android:id="@+id/text_offline_warning"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Device is offline. Manual control disabled."
+                        android:textColor="#9C1C16"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

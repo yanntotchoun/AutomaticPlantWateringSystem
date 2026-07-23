@@ -29,6 +29,9 @@ public class PlantDetailsFragment extends Fragment {
     private Runnable refreshRunnable;
     private TextView lastWateredText;
     private TextView connectionStatusText;
+    private View waterNowButton;
+    private View stopWateringButton;
+    private View offlineWarning;
     private PlantSettingsManager settingsManager;
     private PlantReading plant;
     private PlantViewModel viewModel;
@@ -66,6 +69,9 @@ public class PlantDetailsFragment extends Fragment {
         lastWateredText = view.findViewById(R.id.text_last_watered);
         connectionStatusText = view.findViewById(R.id.text_connection_status);
         currentProfileText = view.findViewById(R.id.text_current_profile);
+        waterNowButton = view.findViewById(R.id.button_water_now);
+        stopWateringButton = view.findViewById(R.id.button_stop_watering);
+        offlineWarning = view.findViewById(R.id.text_offline_warning);
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
         
@@ -82,6 +88,9 @@ public class PlantDetailsFragment extends Fragment {
         startPeriodicRefreshLoop();
 
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
+
+        waterNowButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 5));
+        stopWateringButton.setOnClickListener(v -> viewModel.stopManualWatering(plant.getPlantName()));
 
         view.findViewById(R.id.button_delete_plant).setOnClickListener(v -> showDeleteConfirmation()); // I added a delete button for the user. This removes the data from the firebase in real time also.
 
@@ -131,6 +140,16 @@ public class PlantDetailsFragment extends Fragment {
                 DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
 
         currentProfileText.setText("Current: " + profile.name);
+
+        // Update Manual Controls (BSCK-8.4 and BSCK-8.5)
+        boolean isOnline = plant.isOnline();
+        boolean isWatering = plant.isPumpActive();
+
+        waterNowButton.setVisibility(isWatering ? View.GONE : View.VISIBLE);
+        stopWateringButton.setVisibility(isWatering ? View.VISIBLE : View.GONE);
+        
+        waterNowButton.setEnabled(isOnline);
+        offlineWarning.setVisibility(isOnline ? View.GONE : View.VISIBLE);
     }
 
     private void startPeriodicRefreshLoop() {
