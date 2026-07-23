@@ -89,7 +89,7 @@ public class PlantDetailsFragment extends Fragment {
 
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
 
-        waterNowButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 5));
+        waterNowButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 5)); //Manual watering
         stopWateringButton.setOnClickListener(v -> viewModel.stopManualWatering(plant.getPlantName()));
 
         view.findViewById(R.id.button_delete_plant).setOnClickListener(v -> showDeleteConfirmation()); // I added a delete button for the user. This removes the data from the firebase in real time also.
