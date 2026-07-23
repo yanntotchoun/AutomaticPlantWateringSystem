@@ -1,5 +1,7 @@
 package com.team.plantwatering.ui.dashboard;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -25,29 +27,29 @@ public class PlantViewModel extends ViewModel {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
 
     public PlantViewModel() {
-        databaseReference = FirebaseDatabase.getInstance().getReference("plants");
-        startListeningForChanges();
+        databaseReference = FirebaseDatabase.getInstance().getReference("plants"); //"plants" is the name of the root node in the firebase.
     }
 
     public LiveData<List<PlantReading>> getPlants() {
         return plantsLiveData;
     }
 
-    private void startListeningForChanges() {
+    public void startListeningForChanges(Context context) { //The firebase starts recording the changes here in real time.
+        final PlantSettingsManager settingsManager = new PlantSettingsManager(context);
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlantReading> updatedPlants = new ArrayList<>();
-                for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
+                for (DataSnapshot plantSnapshot : snapshot.getChildren()) { //Every plant captured here is a child of the "plants" node which is the root node.
                     String name = plantSnapshot.getKey();
 
-                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class);
+                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class); //Those are the leaves of each child node
                     Integer water = plantSnapshot.child("water_tank").getValue(Integer.class);
                     Long lastTimeWatered = plantSnapshot.child("last_time_watered_Millis").getValue(Long.class);
                     String thresholdProfile = plantSnapshot.child("threshold_profile").getValue(String.class);
                     Long lastSeenOnline = plantSnapshot.child("connection_status_Millis").getValue(Long.class);
 
-                    // Manual Watering Fields
+                    // Manual Watering Fields (Task BSCK-8.1)
                     Boolean manualCommand = plantSnapshot.child("manual_watering_command").getValue(Boolean.class);
                     Integer manualDuration = plantSnapshot.child("manual_watering_duration").getValue(Integer.class);
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
@@ -63,6 +65,15 @@ public class PlantViewModel extends ViewModel {
                     int md = (manualDuration != null) ? manualDuration : 5;
                     String m = (mode != null) ? mode : "auto";
                     boolean pa = (pumpActive != null) && pumpActive;
+
+                    // comparison logic for moisture_level versus threshold, if dry send notification to MCU
+                    PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(tid);
+                    if (h < profile.drySoil) {
+                        plantSnapshot.getRef().child("messageESP").setValue("NEEDS WATER");
+                    } else {
+                        // no message if moisture is above threshold
+                        plantSnapshot.getRef().child("messageESP").setValue("");
+                    }
 
                     updatedPlants.add(new PlantReading(name, h, w, lw, tid, ls, mc, md, m, pa));
                 }
@@ -86,8 +97,10 @@ public class PlantViewModel extends ViewModel {
 
         newPlantRef.child("moisture_level").setValue(0);
         newPlantRef.child("water_tank").setValue(0);
-        newPlantRef.child("last_time_watered_Millis").setValue(now);
-        newPlantRef.child("last_time_watered").setValue(readableTime);
+        
+        newPlantRef.child("last_time_watered_Millis").setValue(now); // This format (Millis Unix timestamp) is easier for the Arduino to read.
+        newPlantRef.child("last_time_watered").setValue(readableTime); // This format is easier for us to read and debug on the firebase.
+
         newPlantRef.child("threshold_profile").setValue("standard");
         newPlantRef.child("connection_status_Millis").setValue(now);
         newPlantRef.child("connection_status").setValue(readableTime);
