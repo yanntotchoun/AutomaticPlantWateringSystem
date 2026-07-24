@@ -94,5 +94,6 @@
     <string name="wateringreminder">Watering Reminders</string>
     <string name="reminder_notification_title">Plant Watering Reminder</string>
     <string name="reminder_notification_text">It\'s time to check if your plants need watering!</string>
+    <string name="wateringreminder_description">Sets how often you\'ll get a reminder to manually water your plants and to check for low humidity or a low water tank level.</string>
 
 </resources>
