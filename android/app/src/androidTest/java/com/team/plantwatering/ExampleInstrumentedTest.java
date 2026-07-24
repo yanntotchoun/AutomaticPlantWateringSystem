@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering;
+package com.team.plantwatering;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.yourteam.plantwatering", appContext.getPackageName());
+        assertEquals("com.team.plantwatering", appContext.getPackageName());
     }
 }

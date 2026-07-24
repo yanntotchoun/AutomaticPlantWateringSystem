@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering;
+package com.team.plantwatering;
 
 import android.os.Bundle;
 
@@ -6,13 +6,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.yourteam.plantwatering.data.PlantReading;
-import com.yourteam.plantwatering.ui.dashboard.AddPlantFragment;
-import com.yourteam.plantwatering.ui.dashboard.DashboardFragment;
-import com.yourteam.plantwatering.ui.dashboard.OverviewFragment;
-import com.yourteam.plantwatering.ui.dashboard.PlantDetailsFragment;
-import com.yourteam.plantwatering.ui.dashboard.SettingsFragment;
+import com.team.plantwatering.data.PlantReading;
+import com.team.plantwatering.ui.dashboard.AddPlantFragment;
+import com.team.plantwatering.ui.dashboard.DashboardFragment;
+import com.team.plantwatering.ui.dashboard.OverviewFragment;
+import com.team.plantwatering.ui.dashboard.PlantDetailsFragment;
+import com.team.plantwatering.ui.dashboard.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.team.plantwatering.ui.dashboard.ReminderWorker;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import java.util.concurrent.TimeUnit;
+import com.team.plantwatering.ui.dashboard.PlantSettingsManager;
 
 
 public class MainActivity extends AppCompatActivity
@@ -51,6 +57,8 @@ public class MainActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             showTabFragment(new DashboardFragment());
         }
+
+        checkAndScheduleReminders();
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             // If we returned to a tab fragment from the details, show the bottom nav again.
@@ -92,9 +100,47 @@ public class MainActivity extends AppCompatActivity
                 .addToBackStack(DETAILS_BACK_STACK_TAG)
                 .commit();
     }
+
     @Override
     public void onPlantClicked(PlantReading plant) {
         openPlantDetails(plant);
+    }
+
+    private void checkAndScheduleReminders() {
+        PlantSettingsManager settingsManager = new PlantSettingsManager(this);
+        if (settingsManager.isWateringRemindersEnabled()) {
+            String frequency = settingsManager.getReminderFrequency();
+            long intervalMillis = frequencyToMillis(frequency);
+
+            if (intervalMillis != -1L) {
+                PeriodicWorkRequest reminderRequest =
+                        new PeriodicWorkRequest.Builder(ReminderWorker.class,
+                                intervalMillis, TimeUnit.MILLISECONDS)
+                                .build();
+
+                WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                        "watering_reminder",
+                        ExistingPeriodicWorkPolicy.KEEP, // KEEP ensures we don't restart the cycle if it's already running
+                        reminderRequest);
+            }
+        }
+    }
+
+    private long frequencyToMillis(String frequency) {
+        switch (frequency) {
+            case "Every day":
+                return TimeUnit.DAYS.toMillis(1);
+            case "Every 3 days":
+                return TimeUnit.DAYS.toMillis(3);
+            case "Twice a Week":
+                return TimeUnit.DAYS.toMillis(7) / 2;
+            case "Weekly":
+                return TimeUnit.DAYS.toMillis(7);
+            case "Every month":
+                return TimeUnit.DAYS.toMillis(30);
+            default:
+                return -1L;
+        }
     }
 
 }

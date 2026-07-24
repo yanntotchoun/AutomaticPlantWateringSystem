@@ -1,5 +1,8 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,20 +11,31 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.work.WorkManager;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import java.util.concurrent.TimeUnit;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
-import com.yourteam.plantwatering.MainActivity;
-import com.yourteam.plantwatering.R;
-import com.google.android.material.button.MaterialButton;
+import com.team.plantwatering.MainActivity;
+import com.team.plantwatering.R;
 import com.google.android.material.slider.Slider;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.team.plantwatering.data.PlantReading;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -30,6 +44,13 @@ import java.util.function.Consumer;
 public class SettingsFragment extends BaseFragment {
 
     private PlantSettingsManager settingsManager;
+
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (!isGranted) {
+                    Toast.makeText(requireContext(), "Notifications are disabled. You won't receive alerts.", Toast.LENGTH_LONG).show();
+                }
+            });
 
     @Nullable
     @Override
@@ -53,7 +74,13 @@ public class SettingsFragment extends BaseFragment {
 
 
         setUpThresholds(view);
-        setUpNotifications(view);
+        
+        // Find dropdown here so it can be passed or accessed
+        AutoCompleteTextView dropdown = view.findViewById(R.id.dropdownReminderFrequency);
+        
+        setUpNotifications(view, dropdown);
+        setUpWateringReminders(view, dropdown);
+
 
         view.findViewById(R.id.button_back).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
@@ -67,6 +94,15 @@ public class SettingsFragment extends BaseFragment {
     }
 
 
+
+    private void checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+    }
 
     private void setUpThresholds(View view) {
         TextView drySoilLabel = view.findViewById(R.id.text_dry_soil_threshold);
@@ -214,10 +250,11 @@ public class SettingsFragment extends BaseFragment {
         });
     }
 
-    private void setUpNotifications(View view) {
+    private void setUpNotifications(View view, AutoCompleteTextView dropdown) {
         View enabledRow = view.findViewById(R.id.row_notifications_enabled);
         View humidityRow = view.findViewById(R.id.row_low_humidity_alerts);
         View tankRow = view.findViewById(R.id.row_low_tank_alerts);
+        View reminderRow = view.findViewById(R.id.row_watering_reminder_alerts);
 
         ((TextView) enabledRow.findViewById(R.id.text_label)).setText(R.string.enable_notifications);
         ((TextView) enabledRow.findViewById(R.id.text_description)).setText(R.string.enable_notifications_desc);
@@ -231,17 +268,29 @@ public class SettingsFragment extends BaseFragment {
         SwitchMaterial notificationsSwitch = enabledRow.findViewById(R.id.switch_toggle);
         SwitchMaterial humiditySwitch = humidityRow.findViewById(R.id.switch_toggle);
         SwitchMaterial tankSwitch = tankRow.findViewById(R.id.switch_toggle);
+        SwitchCompat reminderSwitch = reminderRow.findViewById(R.id.switch_toggle);
 
         boolean notificationsEnabled = settingsManager.isNotificationsEnabled();
         notificationsSwitch.setChecked(notificationsEnabled);
         humiditySwitch.setChecked(settingsManager.isLowHumidityAlertsEnabled());
         tankSwitch.setChecked(settingsManager.isLowTankAlertsEnabled());
 
-        applyDependentEnabledState(humidityRow, tankRow, humiditySwitch, tankSwitch, notificationsEnabled);
+        applyDependentEnabledState(humidityRow, tankRow, reminderRow, 
+                humiditySwitch, tankSwitch, reminderSwitch, dropdown, notificationsEnabled);
 
         notificationsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             settingsManager.setNotificationsEnabled(isChecked);
-            applyDependentEnabledState(humidityRow, tankRow, humiditySwitch, tankSwitch, isChecked);
+            applyDependentEnabledState(humidityRow, tankRow, reminderRow, 
+                    humiditySwitch, tankSwitch, reminderSwitch, dropdown, isChecked);
+            
+            if (isChecked) {
+                checkNotificationPermission();
+                if (settingsManager.isWateringRemindersEnabled() && dropdown != null) {
+                    scheduleOrCancelReminder(dropdown.getText().toString());
+                }
+            } else {
+                WorkManager.getInstance(requireContext()).cancelUniqueWork("watering_reminder");
+            }
         });
 
         humiditySwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
@@ -251,23 +300,116 @@ public class SettingsFragment extends BaseFragment {
                 settingsManager.setLowTankAlertsEnabled(isChecked));
     }
 
+    private void setUpWateringReminders(View view, AutoCompleteTextView dropdown) {
+        View switchRow = view.findViewById(R.id.row_watering_reminder_alerts);
+        SwitchCompat reminderSwitch = switchRow.findViewById(R.id.switch_toggle);
 
-    private void applyDependentEnabledState(View humidityRow, View tankRow,
+        if (dropdown == null || reminderSwitch == null) return;
+
+        ((TextView) switchRow.findViewById(R.id.text_label)).setText(R.string.watering_reminders);
+        ((TextView) switchRow.findViewById(R.id.text_description)).setText(R.string.watering_reminders_desc);
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                requireContext(), R.array.reminder_frequencies, android.R.layout.simple_dropdown_item_1line);
+        dropdown.setAdapter(adapter);
+        dropdown.setText(settingsManager.getReminderFrequency(), false);
+
+        boolean notificationsEnabled = settingsManager.isNotificationsEnabled();
+        boolean remindersOn = settingsManager.isWateringRemindersEnabled();
+        reminderSwitch.setChecked(remindersOn);
+        reminderSwitch.setEnabled(notificationsEnabled);
+        dropdown.setEnabled(notificationsEnabled && remindersOn);
+
+        if (notificationsEnabled && remindersOn) {
+            String selected = dropdown.getText().toString();
+            scheduleOrCancelReminder(selected);
+        }
+
+        checkNotificationPermission(); // Added this to check on view creation if enabled
+
+        reminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            settingsManager.setWateringRemindersEnabled(isChecked); // or your dedicated setter
+            dropdown.setEnabled(isChecked);
+
+            if (isChecked) {
+                checkNotificationPermission();
+                String selected = dropdown.getText().toString();
+                scheduleOrCancelReminder(selected);
+            } else {
+                WorkManager.getInstance(requireContext()).cancelUniqueWork("watering_reminder");
+            }
+        });
+
+        dropdown.setOnItemClickListener((parent, v, position, id) -> {
+            String selected = (String) parent.getItemAtPosition(position);
+            settingsManager.setReminderFrequency(selected);
+            if (reminderSwitch.isChecked()) {
+                scheduleOrCancelReminder(selected);
+            }
+        });
+    }
+
+    private void scheduleOrCancelReminder(String frequency) {
+        long intervalMillis = frequencyToMillis(frequency);
+        if (intervalMillis == -1L) {
+            WorkManager.getInstance(requireContext()).cancelUniqueWork("watering_reminder");
+        } else {
+            PeriodicWorkRequest reminderRequest =
+                    new PeriodicWorkRequest.Builder(ReminderWorker.class,
+                            intervalMillis, TimeUnit.MILLISECONDS)
+                            .build();
+
+            WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(
+                    "watering_reminder",
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    reminderRequest);
+        }
+    }
+
+    private long frequencyToMillis(String frequency) {
+        switch (frequency) {
+            case "Every day":
+                return TimeUnit.DAYS.toMillis(1);
+            case "Every 3 days":
+                return TimeUnit.DAYS.toMillis(3);
+            case "Twice a Week":
+                return TimeUnit.DAYS.toMillis(7) / 2;
+            case "Weekly":
+                return TimeUnit.DAYS.toMillis(7);
+            case "Every month":
+                return TimeUnit.DAYS.toMillis(30);
+            case "Never":
+            default:
+                return -1L;
+        }
+    }
+
+    private void applyDependentEnabledState(View humidityRow, View tankRow, View reminderRow,
                                             SwitchMaterial humiditySwitch, SwitchMaterial tankSwitch,
+                                            SwitchCompat reminderSwitch, AutoCompleteTextView dropdown,
                                             boolean enabled) {
         humiditySwitch.setEnabled(enabled);
         tankSwitch.setEnabled(enabled);
+        reminderSwitch.setEnabled(enabled);
+
+        // Dropdown only enabled if Master is ON AND Reminder switch is ON
+        if (dropdown != null) {
+            dropdown.setEnabled(enabled && settingsManager.isWateringRemindersEnabled());
+        }
 
         int labelColor = enabled
-                ? getResources().getColor(R.color.text_dark)
-                : getResources().getColor(R.color.text_disabled);
+                ? ContextCompat.getColor(requireContext(), R.color.text_dark)
+                : ContextCompat.getColor(requireContext(), R.color.text_disabled);
         int descColor = enabled
-                ? getResources().getColor(R.color.text_gray_666)
-                : getResources().getColor(R.color.text_disabled_light);
+                ? ContextCompat.getColor(requireContext(), R.color.text_gray_666)
+                : ContextCompat.getColor(requireContext(), R.color.text_disabled_light);
 
-        ((TextView) humidityRow.findViewById(R.id.text_label)).setTextColor(labelColor);
-        ((TextView) humidityRow.findViewById(R.id.text_description)).setTextColor(descColor);
-        ((TextView) tankRow.findViewById(R.id.text_label)).setTextColor(labelColor);
-        ((TextView) tankRow.findViewById(R.id.text_description)).setTextColor(descColor);
+        View[] rows = {humidityRow, tankRow, reminderRow};
+        for (View row : rows) {
+            if (row != null) {
+                ((TextView) row.findViewById(R.id.text_label)).setTextColor(labelColor);
+                ((TextView) row.findViewById(R.id.text_description)).setTextColor(descColor);
+            }
+        }
     }
 }

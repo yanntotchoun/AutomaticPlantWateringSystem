@@ -1,13 +1,14 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.yourteam.plantwatering"
+    namespace = "com.team.plantwatering"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.yourteam.plantwatering"
+        applicationId = "com.team.plantwatering"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -32,10 +33,14 @@ android {
 }
 
 dependencies {
+    implementation("androidx.work:work-runtime:2.9.1")// necessary to add work manager library
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.database)
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
     implementation(libs.material)
+    implementation(libs.annotation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

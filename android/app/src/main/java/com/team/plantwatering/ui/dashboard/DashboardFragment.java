@@ -1,7 +1,9 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -15,8 +17,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.yourteam.plantwatering.R;
-import com.yourteam.plantwatering.data.PlantReading;
+import com.team.plantwatering.R;
+import com.team.plantwatering.data.PlantReading;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
@@ -35,6 +37,20 @@ public class DashboardFragment extends BaseFragment {
     private PlantViewModel viewModel;
     private DashboardListAdapter adapter;
     private List<PlantReading> allPlants;
+
+    private boolean userInterfaceUpdateNeeded = false;
+    private final Handler executeRunnable = new Handler(Looper.getMainLooper());
+    private final Runnable updateUI = new Runnable() {
+        @Override
+        public void run() {
+            if (!userInterfaceUpdateNeeded) return;
+
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+            executeRunnable.postDelayed(this, 60_000);
+        }
+    };
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -58,7 +74,7 @@ public class DashboardFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
-        allPlants = viewModel.getPlants();
+        allPlants = new ArrayList<>();
 
         // Initialize default threshold profiles
         new PlantSettingsManager(requireContext()).initDefaultProfiles();
@@ -76,6 +92,13 @@ public class DashboardFragment extends BaseFragment {
         recyclerView.setAdapter(adapter);
 
         TextInputEditText searchEdit = view.findViewById(R.id.edit_search);
+
+        // Observe LiveData from Firebase
+        viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
+            allPlants = plants;
+            filterPlants(searchEdit.getText() != null ? searchEdit.getText().toString() : "");
+        });
+
         searchEdit.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -92,6 +115,19 @@ public class DashboardFragment extends BaseFragment {
         });
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        userInterfaceUpdateNeeded = true;
+        executeRunnable.post(updateUI);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        userInterfaceUpdateNeeded = false;
+    }
+
     private void filterPlants(String searchText) {
         String query = searchText.toLowerCase(Locale.getDefault());
         List<PlantReading> filtered = new ArrayList<>();
@@ -103,3 +139,4 @@ public class DashboardFragment extends BaseFragment {
         adapter.updatePlants(filtered);
     }
 }
+

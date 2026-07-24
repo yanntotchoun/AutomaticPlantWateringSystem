@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.view.View;
 import androidx.annotation.NonNull;

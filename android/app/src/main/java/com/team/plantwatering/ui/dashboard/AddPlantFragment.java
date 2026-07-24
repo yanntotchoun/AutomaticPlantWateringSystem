@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -14,9 +14,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.yourteam.plantwatering.MainActivity;
-import com.yourteam.plantwatering.R;
-import com.yourteam.plantwatering.data.PlantReading;
+import com.team.plantwatering.R;
+import com.team.plantwatering.data.PlantReading;
 
 
 public class AddPlantFragment extends Fragment {
@@ -44,6 +43,8 @@ public class AddPlantFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        PlantViewModel viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
+        
         name = view.findViewById(R.id.edit_plant_name);
         saveButton = view.findViewById(R.id.button_save_plant);
         cancelButton = view.findViewById(R.id.button_cancel_add_plant);
@@ -55,16 +56,13 @@ public class AddPlantFragment extends Fragment {
 
         saveButton.setOnClickListener(v -> {
             String plantName = name.getText().toString();
- 
-
-
-            // PlantReading newPlant = new PlantReading(plantName, plantType, 0, 0, 0, 0);
-                //clickListener.onPlantClicked(newPlant);
-
+            if (!plantName.isEmpty()) {
+                viewModel.addPlant(plantName);
+                // Return to dashboard after saving
+                getParentFragmentManager().popBackStack();
+            }
         });
 
-        //cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
-
-
+        cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
     }
 }

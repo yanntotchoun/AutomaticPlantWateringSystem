@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -13,8 +13,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.yourteam.plantwatering.R;
-import com.yourteam.plantwatering.data.PlantReading;
+import com.team.plantwatering.R;
+import com.team.plantwatering.data.PlantReading;
 
 
 public class OverviewFragment extends BaseFragment {
@@ -57,9 +57,14 @@ public class OverviewFragment extends BaseFragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_overview);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        recyclerView.setAdapter(new PlantOverviewAdapter(
-                viewModel.getPlants(),
+        
+        java.util.List<PlantReading> plants = new java.util.ArrayList<>();
+        PlantOverviewAdapter adapter = new PlantOverviewAdapter(
+                plants,
                 plant -> clickListener.onPlantClicked(plant)
-        ));
+        );
+        recyclerView.setAdapter(adapter);
+
+        viewModel.getPlants().observe(getViewLifecycleOwner(), adapter::updatePlants);
     }
 }

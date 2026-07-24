@@ -1,0 +1,134 @@
+#include <WiFi.h>
+
+// Water sensor on GPIO 13
+#define water_sensor 13
+
+// Soil moisture sensor on GPIO 36
+#define moisture_sensor 36
+
+// ----- Input your network credentials for testing only. Will eventually initialize them with data from the app -----
+const char* ssid = "AD"; 
+const char* password = "William@2750";
+
+//const int dry = 3560; // soil moisture sensor reading in pure water
+//const int wet = 1380; // soil moisture sensor reading in air
+
+void ConnectedToAP_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info) {
+  Serial.println("Connected To The WiFi Network");
+}
+
+void GotIP_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info) {
+  Serial.print("Local ESP32 IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void WiFi_Disconnected_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info) {
+  Serial.println("Disconnected From WiFi Network");
+  // Attempt Re-Connection
+  WiFi.begin(ssid, password);
+}
+
+
+void setup() {
+  pinMode(water_sensor, INPUT_PULLUP); // Setting the water sensor pin to input
+  Serial.begin(9600);
+
+  // Setting the wifi to station mode and disconnecting in case it was previously connected
+  WiFi.mode(WIFI_STA); 
+  WiFi.onEvent(ConnectedToAP_Handler, ARDUINO_EVENT_WIFI_STA_CONNECTED);
+  WiFi.onEvent(GotIP_Handler, ARDUINO_EVENT_WIFI_STA_GOT_IP);
+  WiFi.onEvent(WiFi_Disconnected_Handler, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);  
+  WiFi.disconnect(); 
+  
+  // Connect to wifi using network credentials from user
+  WiFi.begin(ssid, password); 
+  // *while loop is for testing ONLY. Will need to eventually setup an interrupt to ensure that attempting to connect to Wifi doesnt stall CPU
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(100);
+  } 
+
+
+  // ------ START OF NETWORK SCAN TEST. RUN tHIS TO SEE IF THE BOARD DETECTS YOUR NETWORK ------
+  /***
+  Serial.println("Scanning for available networks...");
+  int n = WiFi.scanNetworks(); // scanNetworks() function returns the number of networks found
+  Serial.println("Scan complete");
+
+  if (n == 0){
+    Serial.println("No networks found");
+  }
+  else {
+    Serial.print(n);
+    Serial.println(" networks found");
+  }
+  Serial.println("Nr | SSID                             | RSSI | CH | Encryption");
+  for (int i = 0; i < n; ++i) {
+    // Print SSID and RSSI for each network found
+    Serial.printf("%2d",i + 1);
+    Serial.print(" | ");
+    Serial.printf("%-32.32s", WiFi.SSID(i).c_str());
+    Serial.print(" | ");
+    Serial.printf("%4d", WiFi.RSSI(i));
+    Serial.print(" | ");
+    Serial.printf("%2d", WiFi.channel(i));
+    Serial.print(" | ");
+    switch (WiFi.encryptionType(i)) {
+      case WIFI_AUTH_OPEN:
+        Serial.print("open");
+        break;
+      case WIFI_AUTH_WEP:
+        Serial.print("WEP");
+        break;
+      case WIFI_AUTH_WPA_PSK:
+        Serial.print("WPA");
+        break;
+      case WIFI_AUTH_WPA2_PSK:
+        Serial.print("WPA2");
+        break;
+      case WIFI_AUTH_WPA_WPA2_PSK:
+        Serial.print("WPA+WPA2");
+        break;
+      case WIFI_AUTH_WPA2_ENTERPRISE:
+        Serial.print("WPA2-EAP");
+        break;
+      case WIFI_AUTH_WPA3_PSK:
+        Serial.print("WPA3");
+        break;
+      case WIFI_AUTH_WPA2_WPA3_PSK:
+        Serial.print("WPA2+WPA3");
+        break;
+      case WIFI_AUTH_WAPI_PSK:
+        Serial.print("WAPI");
+        break;
+      default:
+        Serial.print("unknown");
+    }
+  Serial.println();
+  }
+
+  WiFi.scanDelete(); // Free up memory from the scan
+  // -------- END OF NETWORK SCAN TEST --------
+  **/
+
+}
+
+
+void loop() {
+ 
+  int sensorValue = analogRead(moisture_sensor); // Reading moisture sensor value from 1380 (pure water) to 3560 (air)
+  int humidityPercentage = (sensorValue - 1380) * 100 / (3560 - 1380);
+  Serial.print("Soil Moisture Level: ");
+  Serial.print(humidityPercentage);
+  Serial.println("%");
+
+  int refill_state = digitalRead(water_sensor); // Reading float water sensor state
+  if (refill_state == 1){ // When input is HIGH -> bulb is lifted -> Water is sufficent
+    Serial.println("Sufficient water is available");
+  }
+  else { // when input is LOW -> bulb is lowered -> Water supply needs a refill
+    Serial.println("INSUFFICIENT WATER SUPPLY");
+  }
+  
+  delay(1000); // Delay for one second before the next reading
+}

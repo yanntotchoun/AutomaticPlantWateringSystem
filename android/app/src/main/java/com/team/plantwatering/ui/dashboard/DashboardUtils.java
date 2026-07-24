@@ -1,8 +1,8 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.graphics.Color;
 
-import com.yourteam.plantwatering.data.PlantReading;
+import com.team.plantwatering.data.PlantReading;
 
 public final class DashboardUtils {
 

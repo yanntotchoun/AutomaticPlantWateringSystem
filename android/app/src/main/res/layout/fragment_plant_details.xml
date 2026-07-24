@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:paddingBottom="64dp">
 
         <include layout="@layout/layout_screen_header" />
 
@@ -160,6 +160,30 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
+                <!-- Connection Status row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Connection Status"
+                        android:textColor="@color/text_gray_555"
+                        android:textSize="17sp" />
+
+                    <TextView
+                        android:id="@+id/text_connection_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -217,11 +241,22 @@
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_delete_plant"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="24dp"
+            android:text="Delete Plant"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#9C1C16" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button_back"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
+            android:layout_marginBottom="32dp"
             android:text="@string/back_to_dashboard" />
 
     </LinearLayout>

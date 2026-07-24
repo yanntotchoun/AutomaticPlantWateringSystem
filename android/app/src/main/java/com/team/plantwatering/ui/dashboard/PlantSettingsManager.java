@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -12,8 +12,10 @@ public class PlantSettingsManager {
     private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
     private static final String KEY_LOW_HUMIDITY_ALERTS = "low_humidity_alerts";
     private static final String KEY_LOW_TANK_ALERTS = "low_tank_alerts";
+    private static final String KEY_WATERING_REMINDERS_ENABLED = "watering_reminders_enabled";
 
     private static final String KEY_PROFILE_IDS = "profile_ids";
+    private static final String KEY_REMINDER_FREQUENCY = "reminder_frequency";
 
     private final SharedPreferences prefs;
 
@@ -62,6 +64,20 @@ public class PlantSettingsManager {
         prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply();
     }
 
+    public boolean isWateringRemindersEnabled() {
+        return prefs.getBoolean(KEY_WATERING_REMINDERS_ENABLED, true);
+    }
+
+    public void setWateringRemindersEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_WATERING_REMINDERS_ENABLED, enabled).apply();
+    }
+    public String getReminderFrequency() {
+        return prefs.getString(KEY_REMINDER_FREQUENCY, "Every day");
+    }
+
+    public void setReminderFrequency(String frequency) {
+        prefs.edit().putString(KEY_REMINDER_FREQUENCY, frequency).apply();
+    }
 
     public static class ThresholdProfile {
         public final String id;
@@ -78,19 +94,21 @@ public class PlantSettingsManager {
     }
 
     public ThresholdProfile getThresholdProfile(String id) {
-        if (id == null || "standard".equals(id)) return getDefaultProfile();
+        String effectiveId = (id == null) ? "standard" : id;
         
-        String name = prefs.getString("threshold_name_" + id, null);
-        if (name == null) return getDefaultProfile();
+        String defaultName = "standard".equals(effectiveId) ? "Standard" : "Custom Profile";
+        int defaultDry = 30;
+        int defaultTank = 70;
+
+        String name = prefs.getString("threshold_name_" + effectiveId, defaultName);
+        int dry = prefs.getInt("threshold_dry_" + effectiveId, defaultDry);
+        int tank = prefs.getInt("threshold_tank_" + effectiveId, defaultTank);
         
-        int dry = prefs.getInt("threshold_dry_" + id, 30);
-        int tank = prefs.getInt("threshold_tank_" + id, 70);
-        
-        return new ThresholdProfile(id, name, dry, tank);
+        return new ThresholdProfile(effectiveId, name, dry, tank);
     }
 
     private ThresholdProfile getDefaultProfile() {
-        return new ThresholdProfile("standard", "Standard", 30, 70);
+        return getThresholdProfile("standard");
     }
 
     public void saveThresholdProfile(ThresholdProfile profile) {

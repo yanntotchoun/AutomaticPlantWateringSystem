@@ -1,4 +1,4 @@
-package com.yourteam.plantwatering.ui.dashboard;
+package com.team.plantwatering.ui.dashboard;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,8 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.yourteam.plantwatering.R;
-import com.yourteam.plantwatering.data.PlantReading;
+import com.team.plantwatering.R;
+import com.team.plantwatering.data.PlantReading;
 
 import java.util.List;
 import java.util.Locale;
@@ -25,12 +25,17 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
         void onPlantClicked(PlantReading plant);
     }
 
-    private final List<PlantReading> plants;
+    private List<PlantReading> plants;
     private final PlantClickListener clickListener;
 
     public PlantOverviewAdapter(List<PlantReading> plants, PlantClickListener clickListener) {
         this.plants = plants;
         this.clickListener = clickListener;
+    }
+
+    public void updatePlants(List<PlantReading> newPlants) {
+        this.plants = newPlants;
+        notifyDataSetChanged();
     }
 
     @Override
