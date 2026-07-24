@@ -49,7 +49,7 @@ public class PlantViewModel extends ViewModel {
                     String thresholdProfile = plantSnapshot.child("threshold_profile").getValue(String.class);
                     Long lastSeenOnline = plantSnapshot.child("connection_status_Millis").getValue(Long.class);
 
-                    // Manual Watering Fields (Task BSCK-8.1)
+                    // BSCK-8.1
                     Boolean manualCommand = plantSnapshot.child("manual_watering_command").getValue(Boolean.class);
                     Integer manualDuration = plantSnapshot.child("manual_watering_duration").getValue(Integer.class);
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
@@ -66,12 +66,12 @@ public class PlantViewModel extends ViewModel {
                     String m = (mode != null) ? mode : "auto";
                     boolean pa = (pumpActive != null) && pumpActive;
 
-                    // comparison logic for moisture_level versus threshold, if dry send notification to MCU
+                    // This is the comparison logic for the moisture_level versus threshold. If it is dry, then send the notification to the microcontroller
                     PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(tid);
                     if (h < profile.drySoil) {
                         plantSnapshot.getRef().child("messageESP").setValue("NEEDS WATER");
                     } else {
-                        // no message if moisture is above threshold
+                        // No message needed if moisture is above threshold
                         plantSnapshot.getRef().child("messageESP").setValue("");
                     }
 
@@ -107,17 +107,12 @@ public class PlantViewModel extends ViewModel {
 
         // Initialize Manual Watering Fields
         newPlantRef.child("manual_watering_command").setValue(false);
-        newPlantRef.child("manual_watering_duration").setValue(5); // Default 5 seconds
+        newPlantRef.child("manual_watering_duration").setValue(5);
         newPlantRef.child("watering_mode").setValue("auto");
         newPlantRef.child("is_pump_active").setValue(false);
     }
 
-    private static final int MAX_WATERING_DURATION = 60; // Max 60 seconds for safety
-
-    /**
-     * Sends a command to the MCU to start watering the plant manually.
-     * Enforces a maximum duration to prevent flooding.
-     */
+    private static final int MAX_WATERING_DURATION = 60; // The maximum should be 60 seconds to avoid flooding.
     public void requestManualWatering(String plantName, int durationSeconds) {
         int safeDuration = Math.min(durationSeconds, MAX_WATERING_DURATION);
         
@@ -125,17 +120,13 @@ public class PlantViewModel extends ViewModel {
         plantRef.child("manual_watering_duration").setValue(safeDuration);
         plantRef.child("manual_watering_command").setValue(true);
 
-        // BSCK-8.3: Log the request for history
+        // BSCK 8.3: Log the request for history
         String logTime = dateFormat.format(new Date());
-        DatabaseReference logRef = plantRef.child("logs").push();
+        DatabaseReference logRef = plantRef.child("logs").push(); //This creates a unique pointer for each watering log entry. Those logs are accessible on the database
         logRef.child("event").setValue("Manual watering requested");
         logRef.child("duration").setValue(safeDuration);
         logRef.child("timestamp").setValue(logTime);
     }
-
-    /**
-     * Immediately requests the MCU to stop watering.
-     */
     public void stopManualWatering(String plantName) {
         databaseReference.child(plantName).child("manual_watering_command").setValue(false);
         
@@ -144,11 +135,7 @@ public class PlantViewModel extends ViewModel {
         logRef.child("event").setValue("Manual watering stopped early");
         logRef.child("timestamp").setValue(dateFormat.format(new Date()));
     }
-
-    /**
-     * Switches the plant between 'auto' and 'manual' watering modes.
-     */
-    public void updateWateringMode(String plantName, String mode) {
+    public void updateWateringMode(String plantName, String mode) {  //Switches the plant between 'auto' and 'manual' watering modes. for last sprint
         databaseReference.child(plantName).child("watering_mode").setValue(mode);
     }
 

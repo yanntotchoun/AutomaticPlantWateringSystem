@@ -246,7 +246,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Manual Control"
+                    android:text="Manual Watering Control"
                     android:textColor="@color/text_dark"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -259,18 +259,42 @@
                     android:orientation="vertical">
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_quick_refresh"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Quick Refresh (5s)"
+                        app:icon="@drawable/drop_filled" />
+
+                    <TextView
+                        android:id="@+id/text_duration_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Custom Duration: 10 seconds"
+                        android:textColor="@color/text_gray_555" />
+
+                    <SeekBar
+                        android:id="@+id/seekbar_duration"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:max="60"
+                        android:progress="10" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_water_now"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Water Now (5s)"
-                        app:icon="@drawable/drop_filled" />
+                        android:layout_marginTop="8dp"
+                        android:text="Water Now" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_stop_watering"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Stop Watering"
+                        android:text="Stop Watering Plant"
                         android:textColor="#9C1C16"
                         android:visibility="gone"
                         app:strokeColor="#9C1C16" />
@@ -280,7 +304,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Device is offline. Manual control disabled."
+                        android:text="Device is offline. Manual control is disabled."
                         android:textColor="#9C1C16"
                         android:textSize="14sp"
                         android:visibility="gone" />
