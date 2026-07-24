@@ -71,7 +71,7 @@ public class PlantDetailsFragment extends Fragment {
         lastWateredText = view.findViewById(R.id.text_last_watered);
         connectionStatusText = view.findViewById(R.id.text_connection_status);
         currentProfileText = view.findViewById(R.id.text_current_profile);
-        waterNowButton = (MaterialButton) view.findViewById(R.id.button_water_now);
+        waterNowButton = view.findViewById(R.id.button_water_now);
         quickRefreshButton = view.findViewById(R.id.button_quick_refresh);
         durationBar = view.findViewById(R.id.seekbar_duration); //This bar on the UI is controlled by the user's finger and increments by 5 seconds up to the max: 60 seconds.
         durationLabel = view.findViewById(R.id.text_duration_label);
