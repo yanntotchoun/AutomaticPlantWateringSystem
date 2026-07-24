@@ -99,6 +99,9 @@ public class DashboardFragment extends BaseFragment {
             filterPlants(searchEdit.getText() != null ? searchEdit.getText().toString() : "");
         });
 
+        // Start listening for changes with context
+        viewModel.startListeningForChanges(requireContext());
+
         searchEdit.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -139,4 +142,3 @@ public class DashboardFragment extends BaseFragment {
         adapter.updatePlants(filtered);
     }
 }
-
