@@ -14,8 +14,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.team.plantwatering.data.PlantReading;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -24,66 +26,121 @@ public class PlantViewModel extends ViewModel {
 
     private final MutableLiveData<List<PlantReading>> plantsLiveData = new MutableLiveData<>(new ArrayList<>());
     private final DatabaseReference databaseReference;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
+    
+    // Matches the firmware format exactly: "Monday, July 22 21:27:47"
+    private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
+    private long serverTimeOffset = 0;
 
     public PlantViewModel() {
-        databaseReference = FirebaseDatabase.getInstance().getReference("plants"); //"plants" is the name of the root node in the firebase.
+        // Point to root so we can find "/plant1" etc. as direct children from the reverted firmware
+        databaseReference = FirebaseDatabase.getInstance().getReference();
+        listenForServerTimeOffset();
+    }
+
+    private void listenForServerTimeOffset() {
+        FirebaseDatabase.getInstance().getReference(".info/serverTimeOffset")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Long offset = snapshot.getValue(Long.class);
+                        if (offset != null) {
+                            serverTimeOffset = offset;
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
+    public long getCurrentServerTime() {
+        return System.currentTimeMillis() + serverTimeOffset;
     }
 
     public LiveData<List<PlantReading>> getPlants() {
         return plantsLiveData;
     }
 
-    public void startListeningForChanges(Context context) { //The firebase starts recording the changes here in real time.
+    public void startListeningForChanges(Context context) {
         final PlantSettingsManager settingsManager = new PlantSettingsManager(context);
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlantReading> updatedPlants = new ArrayList<>();
-                for (DataSnapshot plantSnapshot : snapshot.getChildren()) { //Every plant captured here is a child of the "plants" node which is the root node.
+                for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
                     String name = plantSnapshot.getKey();
+                    
+                    // Filter out system nodes or non-plant nodes
+                    if (name == null || name.equals("logs") || name.equals("plants") || name.startsWith(".")) continue;
 
-                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class); //Those are the leaves of each child node
-                    Integer water = plantSnapshot.child("water_tank").getValue(Integer.class);
-                    Long lastTimeWatered = plantSnapshot.child("last_time_watered_Millis").getValue(Long.class);
+                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class);
+                    // Firmware uses "water_level" as a String ("Sufficient water...")
+                    String waterStr = plantSnapshot.child("water_level").getValue(String.class);
+                    // Firmware uses "last_time" as the human words heartbeat
+                    String timeStr = plantSnapshot.child("last_time").getValue(String.class);
+                    
                     String thresholdProfile = plantSnapshot.child("threshold_profile").getValue(String.class);
-                    Long lastSeenOnline = plantSnapshot.child("connection_status_Millis").getValue(Long.class);
+                    if (thresholdProfile == null) thresholdProfile = "standard";
 
-                    // BSCK-8.1
+                    // Handle Manual Watering Fields (Task BSCK-8.1)
                     Boolean manualCommand = plantSnapshot.child("manual_watering_command").getValue(Boolean.class);
                     Integer manualDuration = plantSnapshot.child("manual_watering_duration").getValue(Integer.class);
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
                     Boolean pumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
 
                     int h = (moisture != null) ? moisture : 0;
-                    int w = (water != null) ? water : 0;
-                    long lw = (lastTimeWatered != null) ? lastTimeWatered : 0L;
-                    String tid = (thresholdProfile != null) ? thresholdProfile : "standard";
-                    long ls = (lastSeenOnline != null) ? lastSeenOnline : 0L;
+                    // Ensure moisture stays within 0-100% range
+                    if (h > 100) h = 100;
+                    if (h < 0) h = 0;
+
+                    // Convert String water message to 100/10 for the UI graphics
+                    int w = (waterStr != null && waterStr.contains("Sufficient")) ? 100 : 10;
+                    
+                    // CHOICE B Implementation: Parses "Monday, July 22 21:27:47" and adds the current year.
+                    long lw = parseFirmwareTimeToMillis(timeStr);
+                    long ls = lw; // last_time acts as both heartbeat and watering time in the reverted firmware
 
                     boolean mc = (manualCommand != null) && manualCommand;
                     int md = (manualDuration != null) ? manualDuration : 5;
                     String m = (mode != null) ? mode : "auto";
                     boolean pa = (pumpActive != null) && pumpActive;
 
-                    // This is the comparison logic for the moisture_level versus threshold. If it is dry, then send the notification to the microcontroller
-                    PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(tid);
-                    if (h < profile.drySoil) {
+                    // Comparison logic for microcontroller messages
+                    // Based on firmware,  100 = wet and 0 = dry
+                    PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(thresholdProfile);
+                    if (h < profile.drySoil) { // Trigger if dryness (h) is GREATER than the threshold
                         plantSnapshot.getRef().child("messageESP").setValue("NEEDS WATER");
                     } else {
-                        // No message needed if moisture is above threshold
                         plantSnapshot.getRef().child("messageESP").setValue("");
                     }
 
-                    updatedPlants.add(new PlantReading(name, h, w, lw, tid, ls, mc, md, m, pa));
+                    updatedPlants.add(new PlantReading(name, h, w, lw, thresholdProfile, ls, mc, md, m, pa));
                 }
                 plantsLiveData.setValue(updatedPlants);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) {}
         });
+    }
+
+    private long parseFirmwareTimeToMillis(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) return 0L;
+        try {
+            Date date = firmwareDateFormat.parse(timeStr);
+            if (date != null) {
+                Calendar cal = Calendar.getInstance();
+                int currentYear = cal.get(Calendar.YEAR);
+                
+                cal.setTime(date);
+                cal.set(Calendar.YEAR, currentYear); // "Guessing" the year is the current year
+                
+                return cal.getTimeInMillis();
+            }
+        } catch (ParseException e) {
+            return 0L;
+        }
+        return 0L;
     }
 
     public void updatePlantThreshold(String plantName, String newThresholdId) {
@@ -93,17 +150,12 @@ public class PlantViewModel extends ViewModel {
     public void addPlant(String name) {
         DatabaseReference newPlantRef = databaseReference.child(name);
         long now = System.currentTimeMillis();
-        String readableTime = dateFormat.format(new Date(now));
+        String readableTime = firmwareDateFormat.format(new Date(now));
 
         newPlantRef.child("moisture_level").setValue(0);
-        newPlantRef.child("water_tank").setValue(0);
-        
-        newPlantRef.child("last_time_watered_Millis").setValue(now); // This format (Millis Unix timestamp) is easier for the Arduino to read.
-        newPlantRef.child("last_time_watered").setValue(readableTime); // This format is easier for us to read and debug on the firebase.
-
+        newPlantRef.child("water_level").setValue("Connecting...");
+        newPlantRef.child("last_time").setValue(readableTime);
         newPlantRef.child("threshold_profile").setValue("standard");
-        newPlantRef.child("connection_status_Millis").setValue(now);
-        newPlantRef.child("connection_status").setValue(readableTime);
 
         // Initialize Manual Watering Fields
         newPlantRef.child("manual_watering_command").setValue(false);
@@ -112,7 +164,7 @@ public class PlantViewModel extends ViewModel {
         newPlantRef.child("is_pump_active").setValue(false);
     }
 
-    private static final int MAX_WATERING_DURATION = 60; // The maximum should be 60 seconds to avoid flooding.
+    private static final int MAX_WATERING_DURATION = 60; 
     public void requestManualWatering(String plantName, int durationSeconds) {
         int safeDuration = Math.min(durationSeconds, MAX_WATERING_DURATION);
         
@@ -120,22 +172,21 @@ public class PlantViewModel extends ViewModel {
         plantRef.child("manual_watering_duration").setValue(safeDuration);
         plantRef.child("manual_watering_command").setValue(true);
 
-        // BSCK 8.3: Log the request for history
-        String logTime = dateFormat.format(new Date());
-        DatabaseReference logRef = plantRef.child("logs").push(); //This creates a unique pointer for each watering log entry. Those logs are accessible on the database
+        String logTime = firmwareDateFormat.format(new Date());
+        DatabaseReference logRef = plantRef.child("logs").push();
         logRef.child("event").setValue("Manual watering requested");
         logRef.child("duration").setValue(safeDuration);
         logRef.child("timestamp").setValue(logTime);
     }
+
     public void stopManualWatering(String plantName) {
         databaseReference.child(plantName).child("manual_watering_command").setValue(false);
-        
-        // Log the stop event
         DatabaseReference logRef = databaseReference.child(plantName).child("logs").push();
         logRef.child("event").setValue("Manual watering stopped early");
-        logRef.child("timestamp").setValue(dateFormat.format(new Date()));
+        logRef.child("timestamp").setValue(firmwareDateFormat.format(new Date()));
     }
-    public void updateWateringMode(String plantName, String mode) {  //Switches the plant between 'auto' and 'manual' watering modes. for last sprint
+
+    public void updateWateringMode(String plantName, String mode) {
         databaseReference.child(plantName).child("watering_mode").setValue(mode);
     }
 

@@ -32,15 +32,17 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private List<PlantReading> filteredPlants;
     private final PlantClickListener clickListener;
+    private final PlantViewModel viewModel;
 
     // Tracks which plant cards are expanded, keyed by plant name.
     // (Ported from each PlantCard's own `var isExpanded by remember { mutableStateOf(false) }` -
     // that state has to live outside the ViewHolder here since rows get recycled.)
     private final Set<String> expandedPlantNames = new HashSet<>();
 
-    public DashboardListAdapter(List<PlantReading> initialPlants, PlantClickListener clickListener) {
+    public DashboardListAdapter(List<PlantReading> initialPlants, PlantClickListener clickListener, PlantViewModel viewModel) {
         this.filteredPlants = initialPlants;
         this.clickListener = clickListener;
+        this.viewModel = viewModel;
     }
 
     public void updatePlants(List<PlantReading> newFilteredPlants) {
@@ -87,7 +89,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             ((SummaryViewHolder) holder).bind(filteredPlants);
         } else if (holder instanceof PlantViewHolder) {
             PlantReading plant = filteredPlants.get(position - 1);
-            ((PlantViewHolder) holder).bind(plant, expandedPlantNames, clickListener);
+            ((PlantViewHolder) holder).bind(plant, expandedPlantNames, clickListener, viewModel);
         }
         // EmptyViewHolder has no dynamic content to bind.
     }
@@ -176,7 +178,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
-        void bind(PlantReading plant, Set<String> expandedPlantNames, PlantClickListener clickListener) {
+        void bind(PlantReading plant, Set<String> expandedPlantNames, PlantClickListener clickListener, PlantViewModel viewModel) {
             PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
 
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
@@ -187,8 +189,10 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
             humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
 
+            long currentTime = viewModel.getCurrentServerTime();
+
             lastWatered.setText(DashboardUtils.formatRelativeLastWateredTime(
-                    plant.getLastWateredTimeMillis(), System.currentTimeMillis()));
+                    plant.getLastWateredTimeMillis(), currentTime));
 
             boolean isExpanded = expandedPlantNames.contains(plant.getPlantName());
             expandableSection.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
@@ -198,7 +202,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
 
-                if (plant.isOnline()) { //The connection status appears here when the user clicks on "show plant information".
+                if (plant.isOnline(currentTime)) { //The connection status appears here when the user clicks on "show plant information".
                     connectionStatus.setText("Online");
                     connectionStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
                 } else {

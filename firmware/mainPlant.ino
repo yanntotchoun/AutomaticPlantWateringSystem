@@ -22,7 +22,7 @@ const int daylightOffset=3600;
 
 
 // input network credentials
-const char* ssid = "VIDEOTRON6107"; 
+const char* ssid = "VIDEOTRON6107";
 const char* password = "XTAC74VFJ349V";
 const char* ntpServer="pool.ntp.org";
 
@@ -69,10 +69,10 @@ void setup() {
   WiFi.onEvent(ConnectedToAP_Handler, ARDUINO_EVENT_WIFI_STA_CONNECTED);
   WiFi.onEvent(GotIP_Handler, ARDUINO_EVENT_WIFI_STA_GOT_IP);
   WiFi.onEvent(WiFi_Disconnected_Handler, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);  
-  WiFi.disconnect(); 
-  
+  WiFi.disconnect();
+
   // connect to wifi using network credentials from user
-  WiFi.begin(ssid, password); 
+  WiFi.begin(ssid, password);
   // *while loop is for testing ONLY
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
@@ -101,7 +101,7 @@ void loop() {
   if (!getLocalTime(&timeInfo)){
     Serial.println("Failed to procure time");
   }
- 
+
   int sensorValue = analogRead(moisture_sensor); // reading moisture sensor value from 1380 (pure water) to 3560 (air)
   int moisturePercentage = (sensorValue - 1380) * 100 / (3560 - 1380);
   String messageWater;
@@ -152,18 +152,18 @@ void loop() {
     }
   }
 
-  
+
   delay(2000); // Delay for two seconds before the next reading
 }
 
 void processData(AsyncResult &result) {
-  if (!result.isResult()) 
+  if (!result.isResult())
   return;
 
   if (result.isError()) {
     Firebase.printf("Upload failed: %s\n", result.error().message().c_str());
     return;
-  }  
+  }
 
   if (result.available())
     Firebase.printf("Upload successful: %s\n", result.uid().c_str());

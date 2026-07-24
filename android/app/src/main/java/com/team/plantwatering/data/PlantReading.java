@@ -91,8 +91,9 @@ public class PlantReading implements Parcelable {
         return lastSeenMillis;
     }
 
-    public boolean isOnline() {
-        return (System.currentTimeMillis() - lastSeenMillis) < 120_000L;
+    public boolean isOnline(long currentServerTime) {
+        // Use server-synced time instead of device time to avoid clock drift issues
+        return (currentServerTime - lastSeenMillis) < 120_000L;
     }
 
     public boolean isManualWateringCommand() {

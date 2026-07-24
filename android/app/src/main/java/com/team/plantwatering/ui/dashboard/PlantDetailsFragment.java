@@ -150,9 +150,9 @@ public class PlantDetailsFragment extends Fragment {
         );
 
         lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
-                plant.getLastWateredTimeMillis(), System.currentTimeMillis()));
+                plant.getLastWateredTimeMillis(), viewModel.getCurrentServerTime()));
         
-        if (plant.isOnline()) {
+        if (plant.isOnline(viewModel.getCurrentServerTime())) {
             connectionStatusText.setText("Online");
             connectionStatusText.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
         } else {
@@ -166,7 +166,7 @@ public class PlantDetailsFragment extends Fragment {
         currentProfileText.setText("Current: " + profile.name);
 
         // BSCK 8.4 and BSCK 8.5
-        boolean isOnline = plant.isOnline();
+        boolean isOnline = plant.isOnline(viewModel.getCurrentServerTime());
         boolean isWatering = plant.isPumpActive();
 
         waterNowButton.setVisibility(isWatering ? View.GONE : View.VISIBLE);
