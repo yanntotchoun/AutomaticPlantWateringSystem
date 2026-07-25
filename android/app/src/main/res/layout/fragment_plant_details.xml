@@ -263,7 +263,7 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Quick Refresh (5s)"
+                        android:text="Quick Refresh (3s)"
                         app:icon="@drawable/drop_filled" />
 
                     <TextView

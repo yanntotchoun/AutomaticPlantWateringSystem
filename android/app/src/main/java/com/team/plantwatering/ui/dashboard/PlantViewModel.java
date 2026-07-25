@@ -27,7 +27,7 @@ public class PlantViewModel extends ViewModel {
     private final MutableLiveData<List<PlantReading>> plantsLiveData = new MutableLiveData<>(new ArrayList<>());
     private final DatabaseReference databaseReference;
     
-    // Matches the firmware format exactly: "Monday, July 22 21:27:47"
+    // Should match the firmware time format here
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
     private long serverTimeOffset = 0;
 
@@ -82,11 +82,9 @@ public class PlantViewModel extends ViewModel {
                     String thresholdProfile = plantSnapshot.child("threshold_profile").getValue(String.class);
                     if (thresholdProfile == null) thresholdProfile = "standard";
 
-                    // Handle Manual Watering Fields (Task BSCK-8.1)
-                    Boolean manualCommand = plantSnapshot.child("manual_watering_command").getValue(Boolean.class);
-                    Integer manualDuration = plantSnapshot.child("manual_watering_duration").getValue(Integer.class);
+                    // Manual Watering Fields aligned with firmware key: "water_pump_state"
+                    Integer pumpState = plantSnapshot.child("water_pump_state").getValue(Integer.class);
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
-                    Boolean pumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
 
                     int h = (moisture != null) ? moisture : 0;
                     // Ensure moisture stays within 0-100% range
@@ -96,14 +94,14 @@ public class PlantViewModel extends ViewModel {
                     // Convert String water message to 100/10 for the UI graphics
                     int w = (waterStr != null && waterStr.contains("Sufficient")) ? 100 : 10;
                     
-                    // CHOICE B Implementation: Parses "Monday, July 22 21:27:47" and adds the current year.
+                    // Parses "Monday, July 22 21:27:47" and adds the current year.
                     long lw = parseFirmwareTimeToMillis(timeStr);
                     long ls = lw; // last_time acts as both heartbeat and watering time in the reverted firmware
 
-                    boolean mc = (manualCommand != null) && manualCommand;
-                    int md = (manualDuration != null) ? manualDuration : 5;
+                    boolean mc = (pumpState != null && pumpState == 1);
+                    int md = 3; // Aligned with firmware default (3000ms)
                     String m = (mode != null) ? mode : "auto";
-                    boolean pa = (pumpActive != null) && pumpActive;
+                    boolean pa = (pumpState != null && pumpState == 1);
 
                     // Comparison logic for microcontroller messages
                     // Based on firmware,  100 = wet and 0 = dry
@@ -159,34 +157,54 @@ public class PlantViewModel extends ViewModel {
 
         // Initialize Manual Watering Fields
         newPlantRef.child("manual_watering_command").setValue(false);
-        newPlantRef.child("manual_watering_duration").setValue(5);
-        newPlantRef.child("watering_mode").setValue("auto");
+        newPlantRef.child("manual_watering_duration").setValue(3);
+        newPlantRef.child("watering_mode").setValue("manual"); //The default watering mode is set to manual which responds to the valve activation of the pump
         newPlantRef.child("is_pump_active").setValue(false);
     }
 
     private static final int MAX_WATERING_DURATION = 60; 
     public void requestManualWatering(String plantName, int durationSeconds) {
-        int safeDuration = Math.min(durationSeconds, MAX_WATERING_DURATION);
-        
         DatabaseReference plantRef = databaseReference.child(plantName);
-        plantRef.child("manual_watering_duration").setValue(safeDuration);
-        plantRef.child("manual_watering_command").setValue(true);
+        // Aligned with firmware key: "water_pump_state" as an Integer (1 = ON)
+        plantRef.child("water_pump_state").setValue(1);
 
         String logTime = firmwareDateFormat.format(new Date());
+
+        // Single Status Check Implementation
+        DatabaseReference statusRef = plantRef.child("latest_watering_status");
+        statusRef.child("event").setValue("Manual watering requested");
+        statusRef.child("duration").setValue(durationSeconds);
+        statusRef.child("timestamp").setValue(logTime);
+        statusRef.child("is_completed").setValue(false); // Hardware should set this to true when done
+
+        /*
         DatabaseReference logRef = plantRef.child("logs").push();
         logRef.child("event").setValue("Manual watering requested");
-        logRef.child("duration").setValue(safeDuration);
+        logRef.child("duration").setValue(durationSeconds);
         logRef.child("timestamp").setValue(logTime);
+        */
     }
 
     public void stopManualWatering(String plantName) {
-        databaseReference.child(plantName).child("manual_watering_command").setValue(false);
+        // Aligned with firmware key: "water_pump_state" as an Integer (0 = OFF)
+        databaseReference.child(plantName).child("water_pump_state").setValue(0);
+
+        String logTime = firmwareDateFormat.format(new Date());
+
+        // Single Status Check Update
+        DatabaseReference statusRef = databaseReference.child(plantName).child("latest_watering_status");
+        statusRef.child("event").setValue("Manual watering stopped early");
+        statusRef.child("timestamp").setValue(logTime);
+        statusRef.child("is_completed").setValue(true);
+
+        /*
         DatabaseReference logRef = databaseReference.child(plantName).child("logs").push();
         logRef.child("event").setValue("Manual watering stopped early");
-        logRef.child("timestamp").setValue(firmwareDateFormat.format(new Date()));
+        logRef.child("timestamp").setValue(logTime);
+        */
     }
 
-    public void updateWateringMode(String plantName, String mode) {
+    public void updateWateringMode(String plantName, String mode) { //As a design idea on the backend to switch manual to auto mode
         databaseReference.child(plantName).child("watering_mode").setValue(mode);
     }
 

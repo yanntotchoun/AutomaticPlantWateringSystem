@@ -107,7 +107,7 @@ public class PlantDetailsFragment extends Fragment {
 
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
 
-        quickRefreshButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 5)); //A basic refreshment that is convenient for most plants.
+        quickRefreshButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 3)); //A basic refreshment that is convenient for most plants.
         
         waterNowButton.setOnClickListener(v -> { //This is the custom button that allows the user to choose how long they want to water the plant.
             int duration = (durationBar.getProgress() / 5) * 5;
