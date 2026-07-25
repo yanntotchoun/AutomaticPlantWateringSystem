@@ -246,17 +246,35 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Manual Watering Control"
+                    android:text="Watering Control"
                     android:textColor="@color/text_dark"
                     android:textSize="20sp"
                     android:textStyle="bold" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_auto_watering"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Automatic Watering Control"
+                    android:textColor="@color/text_gray_555"
+                    android:textSize="16sp"
+                    app:useMaterialThemeColors="true" />
 
                 <LinearLayout
                     android:id="@+id/layout_manual_controls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="4dp"
                     android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Manual Watering Control"
+                        android:textSize="16sp"
+                        />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_quick_refresh"

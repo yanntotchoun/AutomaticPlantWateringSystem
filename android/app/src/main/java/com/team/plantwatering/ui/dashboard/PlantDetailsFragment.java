@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.team.plantwatering.R;
 import com.team.plantwatering.data.PlantReading;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.Locale;
 
@@ -34,6 +35,7 @@ public class PlantDetailsFragment extends Fragment {
     private TextView durationLabel;
     private View stopWateringButton;
     private View offlineWarning;
+    private SwitchMaterial autoWateringSwitch;
     private PlantSettingsManager settingsManager;
     private PlantReading plant;
     private PlantViewModel viewModel;
@@ -77,9 +79,16 @@ public class PlantDetailsFragment extends Fragment {
         durationLabel = view.findViewById(R.id.text_duration_label);
         stopWateringButton = view.findViewById(R.id.button_stop_watering);
         offlineWarning = view.findViewById(R.id.text_offline_warning);
+        autoWateringSwitch = view.findViewById(R.id.switch_auto_watering);
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
         
+        autoWateringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (buttonView.isPressed()) {
+                viewModel.setAutoWateringMode(plant.getPlantName(), isChecked);
+            }
+        });
+
         durationBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -164,6 +173,8 @@ public class PlantDetailsFragment extends Fragment {
                 DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
 
         currentProfileText.setText("Current: " + profile.name);
+
+        autoWateringSwitch.setChecked(plant.isAutoWateringEnabled());
 
         // BSCK 8.4 and BSCK 8.5
         boolean isOnline = plant.isOnline();

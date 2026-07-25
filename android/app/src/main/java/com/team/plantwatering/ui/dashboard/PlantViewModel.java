@@ -52,6 +52,10 @@ public class PlantViewModel extends ViewModel {
                     // BSCK-8.1
                     Boolean manualCommand = plantSnapshot.child("manual_watering_command").getValue(Boolean.class);
                     Integer manualDuration = plantSnapshot.child("manual_watering_duration").getValue(Integer.class);
+
+                    // BSCK-3
+                    Boolean autoCommand = plantSnapshot.child("auto_watering_mode").getValue(Boolean.class);
+
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
                     Boolean pumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
 
@@ -63,10 +67,12 @@ public class PlantViewModel extends ViewModel {
 
                     boolean mc = (manualCommand != null) && manualCommand;
                     int md = (manualDuration != null) ? manualDuration : 5;
+                    boolean ac = (autoCommand != null) && autoCommand;
+
                     String m = (mode != null) ? mode : "auto";
                     boolean pa = (pumpActive != null) && pumpActive;
 
-                    // This is the comparison logic for the moisture_level versus threshold. If it is dry, then send the notification to the microcontroller
+                    // This is the comparison logic for the moisture_level versus threshold. If dry, then send the notification to the microcontroller
                     PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(tid);
                     if (h < profile.drySoil) {
                         plantSnapshot.getRef().child("messageESP").setValue("NEEDS WATER");
@@ -75,7 +81,7 @@ public class PlantViewModel extends ViewModel {
                         plantSnapshot.getRef().child("messageESP").setValue("");
                     }
 
-                    updatedPlants.add(new PlantReading(name, h, w, lw, tid, ls, mc, md, m, pa));
+                    updatedPlants.add(new PlantReading(name, h, w, lw, tid, ls, mc, md, m, pa, ac));
                 }
                 plantsLiveData.setValue(updatedPlants);
             }
@@ -110,6 +116,7 @@ public class PlantViewModel extends ViewModel {
         newPlantRef.child("manual_watering_duration").setValue(5);
         newPlantRef.child("watering_mode").setValue("auto");
         newPlantRef.child("is_pump_active").setValue(false);
+        newPlantRef.child("auto_watering_mode").setValue(true);
     }
 
     private static final int MAX_WATERING_DURATION = 60; // The maximum should be 60 seconds to avoid flooding.
@@ -137,6 +144,10 @@ public class PlantViewModel extends ViewModel {
     }
     public void updateWateringMode(String plantName, String mode) {  //Switches the plant between 'auto' and 'manual' watering modes. for last sprint
         databaseReference.child(plantName).child("watering_mode").setValue(mode);
+    }
+
+    public void setAutoWateringMode(String plantName, boolean enabled) {
+        databaseReference.child(plantName).child("auto_watering_mode").setValue(enabled);
     }
 
     public void deletePlant(String name) {
