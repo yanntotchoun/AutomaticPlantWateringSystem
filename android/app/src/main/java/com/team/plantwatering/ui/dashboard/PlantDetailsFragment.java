@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,18 +18,24 @@ import androidx.lifecycle.ViewModelProvider;
 import com.team.plantwatering.R;
 import com.team.plantwatering.data.PlantReading;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.Locale;
 
 public class PlantDetailsFragment extends Fragment {
-
     private static final String ARG_PLANT = "arg_plant";
     private static final long REFRESH_INTERVAL_MILLIS = 10_000L;
-
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
     private TextView lastWateredText;
     private TextView connectionStatusText;
+    private MaterialButton waterNowButton;
+    private View quickRefreshButton;
+    private SeekBar durationBar;
+    private TextView durationLabel;
+    private View stopWateringButton;
+    private View offlineWarning;
+    private SwitchMaterial autoWateringSwitch;
     private PlantSettingsManager settingsManager;
     private PlantReading plant;
     private PlantViewModel viewModel;
@@ -66,9 +73,35 @@ public class PlantDetailsFragment extends Fragment {
         lastWateredText = view.findViewById(R.id.text_last_watered);
         connectionStatusText = view.findViewById(R.id.text_connection_status);
         currentProfileText = view.findViewById(R.id.text_current_profile);
+        waterNowButton = view.findViewById(R.id.button_water_now);
+        quickRefreshButton = view.findViewById(R.id.button_quick_refresh);
+        durationBar = view.findViewById(R.id.seekbar_duration); //This bar on the UI is controlled by the user's finger and increments by 5 seconds up to the max: 60 seconds.
+        durationLabel = view.findViewById(R.id.text_duration_label);
+        stopWateringButton = view.findViewById(R.id.button_stop_watering);
+        offlineWarning = view.findViewById(R.id.text_offline_warning);
+        autoWateringSwitch = view.findViewById(R.id.switch_auto_watering); //the switch for auto mode is implemented here on the UI.
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
         
+        autoWateringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (buttonView.isPressed()) {
+                viewModel.setAutoWateringMode(plant.getPlantName(), isChecked);
+            }
+        });
+
+        durationBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int steppedProgress = (progress/5)*5;
+                int safeProgress = Math.max(10, steppedProgress); // Min 10 seconds
+
+                durationLabel.setText(String.format(Locale.getDefault(), "Custom Duration: %d seconds", safeProgress));
+                waterNowButton.setText(String.format(Locale.getDefault(), "Water Plant for %d s", safeProgress));
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
         viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
             for (PlantReading p : plants) {
                 if (p.getPlantName().equals(plant.getPlantName())) {
@@ -83,7 +116,16 @@ public class PlantDetailsFragment extends Fragment {
 
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
 
-        view.findViewById(R.id.button_delete_plant).setOnClickListener(v -> showDeleteConfirmation()); // I added a delete button for the user. This removes the data from the firebase in real time also.
+        quickRefreshButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 3)); //A basic refreshment that is convenient for most plants.
+        
+        waterNowButton.setOnClickListener(v -> { //This is the custom button that allows the user to choose how long they want to water the plant.
+            int duration = (durationBar.getProgress() / 5) * 5;
+            viewModel.requestManualWatering(plant.getPlantName(), duration);
+        });
+
+        stopWateringButton.setOnClickListener(v -> viewModel.stopManualWatering(plant.getPlantName()));
+
+        view.findViewById(R.id.button_delete_plant).setOnClickListener(v -> showDeleteConfirmation()); // I added a delete plant button for the user. This removes the data from the firebase in real time also.
 
         MaterialButton backButton = view.findViewById(R.id.button_back);
         backButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
@@ -117,9 +159,9 @@ public class PlantDetailsFragment extends Fragment {
         );
 
         lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
-                plant.getLastWateredTimeMillis(), System.currentTimeMillis()));
+                plant.getLastWateredTimeMillis(), viewModel.getCurrentServerTime()));
         
-        if (plant.isOnline()) {
+        if (plant.isOnline(viewModel.getCurrentServerTime())) {
             connectionStatusText.setText("Online");
             connectionStatusText.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
         } else {
@@ -131,6 +173,25 @@ public class PlantDetailsFragment extends Fragment {
                 DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
 
         currentProfileText.setText("Current: " + profile.name);
+
+        autoWateringSwitch.setChecked(plant.isAutoWateringEnabled());
+
+        // BSCK 8.4 and BSCK 8.5
+        boolean isOnline = plant.isOnline(viewModel.getCurrentServerTime());
+        boolean isWatering = plant.isPumpActive();
+
+        waterNowButton.setVisibility(isWatering ? View.GONE : View.VISIBLE);
+        quickRefreshButton.setVisibility(isWatering ? View.GONE : View.VISIBLE);
+        durationBar.setVisibility(isWatering ? View.GONE : View.VISIBLE);
+        durationLabel.setVisibility(isWatering ? View.GONE : View.VISIBLE);
+        
+        stopWateringButton.setVisibility(isWatering ? View.VISIBLE : View.GONE);
+        
+        waterNowButton.setEnabled(isOnline); //These buttons are only clickable if the ESP is online and pinging to the firebase.
+        quickRefreshButton.setEnabled(isOnline);
+        durationBar.setEnabled(isOnline);
+
+        offlineWarning.setVisibility(isOnline ? View.GONE : View.VISIBLE);
     }
 
     private void startPeriodicRefreshLoop() {
