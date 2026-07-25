@@ -79,7 +79,7 @@ public class PlantDetailsFragment extends Fragment {
         durationLabel = view.findViewById(R.id.text_duration_label);
         stopWateringButton = view.findViewById(R.id.button_stop_watering);
         offlineWarning = view.findViewById(R.id.text_offline_warning);
-        autoWateringSwitch = view.findViewById(R.id.switch_auto_watering);
+        autoWateringSwitch = view.findViewById(R.id.switch_auto_watering); //the switch for auto mode is implemented here on the UI.
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
         

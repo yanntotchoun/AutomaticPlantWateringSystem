@@ -32,13 +32,10 @@ public class PlantViewModel extends ViewModel {
     private long serverTimeOffset = 0;
 
     public PlantViewModel() {
-        // Points to the root node to find "/plant1" etc. as direct children to match current firmware
-        databaseReference = FirebaseDatabase.getInstance().getReference();
-        
-        /* 
-        // Previously used this folder-based organization:
-        // databaseReference = FirebaseDatabase.getInstance().getReference("plants");
-        */
+        // Points to the root node to find "/plant1" as direct children to match current firmware
+       // databaseReference = FirebaseDatabase.getInstance().getReference(); // This separates all the plants from each other.
+
+        databaseReference = FirebaseDatabase.getInstance().getReference("plants"); // This creates a collection of children nodes under a main root node called: plants
 
         listenForServerTimeOffset();
     }
@@ -73,12 +70,12 @@ public class PlantViewModel extends ViewModel {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlantReading> updatedPlants = new ArrayList<>();
-                for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
+                for (DataSnapshot plantSnapshot : snapshot.getChildren()) { //Every plant captured here is a child of the "plants" node which is the root node.
                     String name = plantSnapshot.getKey();
 
                     if (name == null || name.startsWith(".") || name.equals("logs") || name.equals("plants")) continue;
                     
-                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class);
+                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class); //Those are the leaves of each child node
                     String waterStr = plantSnapshot.child("water_level").getValue(String.class);
                     String timeStr = plantSnapshot.child("last_time").getValue(String.class);
                     
@@ -100,15 +97,13 @@ public class PlantViewModel extends ViewModel {
                     
                     // Convert String water message to 100/10 for the UI graphics
                     int w = (waterStr != null && waterStr.contains("Sufficient")) ? 100 : 10;
-                    
-                    long lw = parseFirmwareTimeToMillis(timeStr); // time conversion for the ESP
+                    long lw = parseFirmwareTimeToMillis(timeStr); // time translation for the ESP
                     long ls = lw; // last_time acts as both heartbeat and watering time
-                    
                     boolean mc = (pumpState != null && pumpState == 1); // pump action made by the user
                     int md = (duration != null) ? duration : 3; // default to 3s if not found
-                    String m = (mode != null) ? mode : "manual";
-                    boolean pa = (pumpState != null && pumpState == 1); // pump feedback
-                    boolean ac = (autoEnabled != null) && autoEnabled;
+                    String m = (mode != null) ? mode : "manual"; //default mode set to manual
+                    boolean pa = (pumpState != null && pumpState == 1); // pump feedback (is the pump active?)
+                    boolean ac = (autoEnabled != null) && autoEnabled; // auto mode feedback
 
                     // Comparison for microcontroller messages
                     PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(thresholdProfileId);
@@ -169,7 +164,8 @@ public class PlantViewModel extends ViewModel {
         newPlantRef.child("auto_watering_mode").setValue(true);
     }
 
-    private static final int MAX_WATERING_DURATION = 60; 
+    private static final int MAX_WATERING_DURATION = 60; //This is just a safety feature to prevent flooding. It stops watering at 60 seconds and overrides the timer of the UI or ESP.
+                                                         //For the moment it's not being used. It's a concept idea.
 
     public void requestManualWatering(String plantName, int durationSeconds) {
         DatabaseReference plantRef = databaseReference.child(plantName);
@@ -178,11 +174,12 @@ public class PlantViewModel extends ViewModel {
 
         String logTime = firmwareDateFormat.format(new Date());
 
-        // Single Status Check Implementation
+        // This here is the log that gets overwritten each time a new watering event is recorded.
         DatabaseReference statusRef = plantRef.child("latest_watering_status");
         statusRef.child("event").setValue("Manual watering requested");
         statusRef.child("duration").setValue(durationSeconds);
-        statusRef.child("timestamp").setValue(logTime);
+        statusRef.child("timestamp_start").setValue(logTime);
+        statusRef.child("timestamp_stop").setValue(""); // Reset stop time
         statusRef.child("is_completed").setValue(false); 
 
         // Also update the top-level duration key for consistency
@@ -191,9 +188,21 @@ public class PlantViewModel extends ViewModel {
         // Simulation Mode: Signal completion after the requested duration
         long delayMillis = (long) durationSeconds * 1000 + 500;
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            String stopTime = firmwareDateFormat.format(new Date());
             plantRef.child("water_pump_state").setValue(0);
             statusRef.child("is_completed").setValue(true);
+            statusRef.child("timestamp_stop").setValue(stopTime);
         }, delayMillis);
+
+        /*
+        DatabaseReference logRef = plantRef.child("logs").push(); // This is the old format that would save all the logs recorded.
+
+        // The .push() generates a unique id for each log.
+
+        logRef.child("event").setValue("Manual watering requested");
+        logRef.child("duration").setValue(durationSeconds);
+        logRef.child("timestamp").setValue(logTime);
+        */
     }
 
     public void stopManualWatering(String plantName) {
@@ -201,13 +210,20 @@ public class PlantViewModel extends ViewModel {
 
         String logTime = firmwareDateFormat.format(new Date());
 
+        // The same log gets updated here if the watering event is stopped on the UI.
         DatabaseReference statusRef = databaseReference.child(plantName).child("latest_watering_status");
         statusRef.child("event").setValue("Manual watering stopped early");
-        statusRef.child("timestamp").setValue(logTime);
+        statusRef.child("timestamp_stop").setValue(logTime);
         statusRef.child("is_completed").setValue(true);
+
+        /*
+        DatabaseReference logRef = databaseReference.child(plantName).child("logs").push();
+        logRef.child("event").setValue("Manual watering stopped early");
+        logRef.child("timestamp").setValue(logTime);
+        */
     }
 
-    public void updateWateringMode(String plantName, String mode) {
+    public void updateWateringMode(String plantName, String mode) { // As a design idea on the backend to switch manual to auto mode. Not functional yet
         databaseReference.child(plantName).child("watering_mode").setValue(mode);
     }
 
