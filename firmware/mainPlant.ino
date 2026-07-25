@@ -24,8 +24,8 @@ const int daylightOffset=3600;
 
 
 // input network credentials
-const char* ssid = "VIDEOTRON6107";
-const char* password = "XTAC74VFJ349V";
+const char* ssid = "AD"; 
+const char* password = "William@2750";
 const char* ntpServer="pool.ntp.org";
 
 // esp32 network credentials for initial connection with app
@@ -59,7 +59,6 @@ int pumping_time = 3000;
 
 // Variables to track water flow through the pump
 double flow_rate = 0.0;
-double total_flow = 0.0;
 volatile int pulse_count = 0;
 const double pulses_per_liter = 5880.0;
 
@@ -68,8 +67,6 @@ void IRAM_ATTR flow_rate_ISR() {
   pulse_count++;
 }
 
-// State variable for the status of database upload requests
-volatile bool upload_complete = true;
 
 void ConnectedToAP_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info) {
   Serial.println("Connected To The WiFi Network");
@@ -101,10 +98,11 @@ void setup() {
   Serial.begin(115200);
 
   // setting the wifi to station mode and disconnecting in case it was previously connected
+  //WiFi.mode(WIFI_STA); 
   WiFi.onEvent(ConnectedToAP_Handler, ARDUINO_EVENT_WIFI_STA_CONNECTED);
   WiFi.onEvent(GotIP_Handler, ARDUINO_EVENT_WIFI_STA_GOT_IP);
   WiFi.onEvent(WiFi_Disconnected_Handler, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);  
-  WiFi.disconnect();
+  WiFi.disconnect(); 
 
   WiFi.mode(WIFI_STA);
   //WiFi.softAP(esp32_ssid, esp32_password);
@@ -116,7 +114,7 @@ void setup() {
   server.begin();
   
   // connect to wifi using network credentials from user
-  WiFi.begin(ssid, password);
+  WiFi.begin(ssid, password); 
   // *while loop is for testing ONLY
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
@@ -145,7 +143,7 @@ void loop() {
   if (!getLocalTime(&timeInfo)){
     Serial.println("Failed to procure time");
   }
-
+ 
   int sensorValue = analogRead(moisture_sensor); // reading moisture sensor value from 1380 (pure water) to 3560 (air)
   int moisturePercentage = 100 - ((sensorValue - 1380) * 100 / (3560 - 1380));
   if (moisturePercentage < 0) {
@@ -188,6 +186,8 @@ void loop() {
       Serial.println("Current time:");
       Serial.println(currentTime);
 
+      Database.set<int>(aClient,"/plant1/water_pump_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
+
       // Send moisture level
       Database.set<int>(aClient, "/plant1/moisture_level", moisturePercentage, processData, "RTDB_Send_MoistureLevel");
 
@@ -204,62 +204,31 @@ void loop() {
     }
   }
   
-  // Runs in the condition that the water pump is set to turn ONLY if set in the current loop iteration
   if (current_pump_state == 1 && previous_pump_state == 0) {
-
     // Turn the water pump on for a set duration
     digitalWrite(water_pump, HIGH);
     delay(pumping_time);
     digitalWrite(water_pump, LOW);
-
-    // --- THE FIX: Tell Firebase to stop the pump (Reset the switch) ---
-    Database.set<int>(aClient, "/plant1/water_pump_state", 0, processData, "Stop_Pump_Logic");
-
-    // Update the single status check flag for the App UI
-    Database.set<bool>(aClient, "/plant1/latest_watering_status/is_completed", true, nullptr);
-
-    total_flow = (pulse_count / pulses_per_liter); // Gives the amount of water dispensed in L
+    flow_rate = (pulse_count / pulses_per_liter); // Gives the amount of water dispensed in L
 
     Serial.print("Water dispensed: ");
-    Serial.print(total_flow);
+    Serial.print(flow_rate);
     Serial.println(" L");
 
-    flow_rate = total_flow * 20; // Converts the dispensed water amount from L to L/sec
+    flow_rate = flow_rate * 20; // Converts the dispensed water amount from L to L/sec
 
     Serial.print("Flow rate: ");
     Serial.print(flow_rate);
     Serial.println(" L/min");
-
-    pulse_count = 0; // Reset the pulse counter of the flow sensor
-    unsigned long start = millis();
-
-    // Make sure to wait until database is free to handle requests, as the next two requests are critical and cannot be skipped until next loop iteration
-    upload_complete = false;
-    while(!app.ready()){} 
-  
-    Database.set<double>(aClient, "/plant1/dispensed_water", total_flow, processData, "RTDB_Send_DispensedWater_Volume");
-    while (!upload_complete && millis() - start < 20000){
-      app.loop();
-      delay(1);
-    }
-
-    start = millis();
-    upload_complete = false;
-    while(!app.ready()){} 
-
-    Database.set<double>(aClient, "/plant1/dispensed_flow_rate", flow_rate, processData, "RTDB_Send_Dispensed_Flow_Rate");
-    while (!upload_complete && millis() - start < 20000){
-      app.loop();
-      delay(1);
-    }
-
   }
 
   // Update the previous water pump state for next loop iteration
   previous_pump_state = current_pump_state; 
-  pulse_count = 0;
 
-  delay(2000); // Delay for two seconds before the next reading
+  current_pump_state = 0; // FOR TESTING
+
+  
+  delay(20000); // Delay for two seconds before the next reading
 }
 
 void processData(AsyncResult &result) {
@@ -268,18 +237,11 @@ void processData(AsyncResult &result) {
 
   if (result.isError()) {
     Firebase.printf("Upload failed: %s\n", result.error().message().c_str());
-    if (result.uid() == "RTDB_Send_DispensedWater_Volume" || result.uid() == "RTDB_Send_Dispensed_Flow_Rate") {
-      upload_complete = true;
-    }
     return;
-  }
+  }  
 
-  if (result.available()) {
+  if (result.available())
     Firebase.printf("Upload successful: %s\n", result.uid().c_str());
-    // Water flow and volume data case interrupt CPU and must be have their condition variable flipped when completed
-    if (result.uid() == "RTDB_Send_DispensedWater_Volume" || result.uid() == "RTDB_Send_Dispensed_Flow_Rate") {
-      upload_complete = true;
-    }
-  }
     
+}
 }
