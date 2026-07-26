@@ -186,20 +186,20 @@ void loop() {
       Serial.println("Current time:");
       Serial.println(currentTime);
 
-      Database.set<int>(aClient,"/plant1/water_pump_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
+      Database.set<int>(aClient,"/plants/plant1/water_pump_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
 
       // Send moisture level
-      Database.set<int>(aClient, "/plant1/moisture_level", moisturePercentage, processData, "RTDB_Send_MoistureLevel");
+      Database.set<int>(aClient, "/plants/plant1/moisture_level", moisturePercentage, processData, "RTDB_Send_MoistureLevel");
 
       // Send water tank state
-      Database.set<String>(aClient, "/plant1/water_level", messageWater, processData, "RTDB_Send_WaterLevel");
+      Database.set<String>(aClient, "/plants/plant1/water_level", messageWater, processData, "RTDB_Send_WaterLevel");
 
 
       // Send last time watered
-      Database.set<String>(aClient, "/plant1/last_time", timeWatered, processData, "RTDB_Send_Time");
+      Database.set<String>(aClient, "/plants/plant1/last_time", timeWatered, processData, "RTDB_Send_Time");
 
       // Receive the required state of the water pump from the database
-      current_pump_state = Database.get<int>(aClient, "/plant1/water_pump_state");
+      current_pump_state = Database.get<int>(aClient, "/plants/plant1/water_pump_state");
 
     }
   }
