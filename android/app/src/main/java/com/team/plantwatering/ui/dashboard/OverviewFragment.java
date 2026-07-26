@@ -57,7 +57,7 @@ public class OverviewFragment extends BaseFragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_overview);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        
+
         java.util.List<PlantReading> plants = new java.util.ArrayList<>();
         PlantOverviewAdapter adapter = new PlantOverviewAdapter(
                 plants,
@@ -65,6 +65,10 @@ public class OverviewFragment extends BaseFragment {
         );
         recyclerView.setAdapter(adapter);
 
-        viewModel.getPlants().observe(getViewLifecycleOwner(), adapter::updatePlants);
+        // Pass the server-synced time along with each update so isOnline() has a real
+        // value to compare against, instead of defaulting to 0 (which made every plant
+        // show as Online regardless of actual connectivity).
+        viewModel.getPlants().observe(getViewLifecycleOwner(),
+                newPlants -> adapter.updatePlants(newPlants, viewModel.getCurrentServerTime()));
     }
 }

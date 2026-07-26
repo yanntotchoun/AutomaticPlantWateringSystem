@@ -1,5 +1,6 @@
 package com.team.plantwatering.ui.dashboard;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,12 +28,21 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private List<PlantReading> plants;
     private final PlantClickListener clickListener;
+    private long currentServerTime = 0L; // used to evaluate PlantReading.isOnline() without clock drift
 
     public PlantOverviewAdapter(List<PlantReading> plants, PlantClickListener clickListener) {
         this.plants = plants;
         this.clickListener = clickListener;
     }
 
+    public void updatePlants(List<PlantReading> newPlants, long currentServerTime) {
+        this.plants = newPlants;
+        this.currentServerTime = currentServerTime;
+        notifyDataSetChanged();
+    }
+
+    // Kept for compatibility with any existing callers; prefer the overload above so the
+    // online/offline indicator has a real server time to compare against.
     public void updatePlants(List<PlantReading> newPlants) {
         this.plants = newPlants;
         notifyDataSetChanged();
@@ -64,7 +74,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
             ((IntroViewHolder) holder).bind(plants);
         } else {
             PlantReading plant = plants.get(position - 1);
-            ((PlantRowViewHolder) holder).bind(plant, clickListener);
+            ((PlantRowViewHolder) holder).bind(plant, clickListener, currentServerTime);
         }
     }
 
@@ -115,6 +125,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final TextView plantName;
         private final TextView humidityTank;
         private final TextView statusChip;
+        private final TextView connectivityStatus; // new: online/offline indicator, add this id to item_plant_overview_row.xml
         private final PlantSettingsManager settingsManager;
 
         PlantRowViewHolder(@NonNull View itemView) {
@@ -123,16 +134,23 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
             plantName = itemView.findViewById(R.id.text_plant_name);
             humidityTank = itemView.findViewById(R.id.text_humidity_tank);
             statusChip = itemView.findViewById(R.id.chip_status);
+            connectivityStatus = itemView.findViewById(R.id.text_connectivity_status);
             settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
-        void bind(PlantReading plant, PlantClickListener clickListener) {
+        void bind(PlantReading plant, PlantClickListener clickListener, long currentServerTime) {
             PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
             plantName.setText(plant.getPlantName());
             humidityTank.setText(String.format(Locale.getDefault(), "Humidity: %d%%  |  Tank: %d%%",
                     plant.getSoilHumidity(), plant.getWaterTank()));
             PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
+
+            if (connectivityStatus != null) {
+                boolean online = plant.isOnline(currentServerTime);
+                connectivityStatus.setText(online ? "Online" : "Offline");
+                connectivityStatus.setTextColor(online ? Color.parseColor("#2E7D32") : Color.parseColor("#C62828"));
+            }
 
             itemView.setOnClickListener(v -> clickListener.onPlantClicked(plant));
         }

@@ -32,6 +32,7 @@
             android:textStyle="bold"
             tools:text="B" />
 
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -75,6 +76,12 @@
             android:textStyle="bold"
             tools:background="@drawable/bg_chip_healthy"
             tools:text="Healthy" />
+        <TextView
+            android:id="@+id/text_connectivity_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

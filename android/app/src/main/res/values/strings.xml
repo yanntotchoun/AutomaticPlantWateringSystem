@@ -42,6 +42,9 @@
     <string name="device_pairing">Device pairing</string>
     <string name="mcu_not_connected">Not connected</string>
     <string name="mcu_connected">Connected to %1$s</string>
+    <string name="mcu_checking_availability">Checking for an available device…</string>
+    <string name="mcu_slot_ready">Device slot found — ready to save</string>
+    <string name="mcu_no_slots">No available device slots found. Make sure your ESP32 is powered on and connected to WiFi.</string>
     <string name="connect_to_mcu">Connect to MCU</string>
     <string name="plant_details">Plant Details</string>
     <string name="plant_name_hint">Plant Name</string>

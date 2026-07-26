@@ -46,7 +46,6 @@ public class DashboardFragment extends BaseFragment {
             if (!userInterfaceUpdateNeeded) return;
 
             if (adapter != null) {
-                // Ensure all logic uses the server-synced time
                 adapter.notifyDataSetChanged();
             }
             executeRunnable.postDelayed(this, 10_000); // Increased frequency to 10s for better responsiveness
@@ -140,6 +139,6 @@ public class DashboardFragment extends BaseFragment {
                 filtered.add(plant);
             }
         }
-        adapter.updatePlants(filtered);
+        adapter.updatePlants(filtered, viewModel.getCurrentServerTime());
     }
 }

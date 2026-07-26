@@ -69,11 +69,10 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Device pairing -->
+        <!-- Device pairing status (automatic, no manual connect action) -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -102,18 +101,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="@string/mcu_not_connected"
-                    android:textColor="@color/status_dry_text"
+                    android:text="@string/mcu_checking_availability"
+                    android:textColor="@color/text_gray_666"
                     android:textSize="15sp"
                     android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_connect_mcu"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/connect_to_mcu" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -135,6 +126,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
+            android:enabled="false"
             android:text="@string/save_plant" />
 
         <com.google.android.material.button.MaterialButton

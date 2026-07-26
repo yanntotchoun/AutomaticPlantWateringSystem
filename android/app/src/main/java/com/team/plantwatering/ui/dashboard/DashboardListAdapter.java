@@ -33,6 +33,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private List<PlantReading> filteredPlants;
     private final PlantClickListener clickListener;
     private final PlantViewModel viewModel;
+    private long currentServerTime = 0L; // kept in sync via updatePlants(), used for online/offline checks
 
     // Tracks which plant cards are expanded, keyed by plant name.
     // (Ported from each PlantCard's own `var isExpanded by remember { mutableStateOf(false) }` -
@@ -43,10 +44,12 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         this.filteredPlants = initialPlants;
         this.clickListener = clickListener;
         this.viewModel = viewModel;
+        this.currentServerTime = viewModel.getCurrentServerTime();
     }
 
-    public void updatePlants(List<PlantReading> newFilteredPlants) {
+    public void updatePlants(List<PlantReading> newFilteredPlants, long currentServerTime) {
         this.filteredPlants = newFilteredPlants;
+        this.currentServerTime = currentServerTime;
         notifyDataSetChanged();
     }
 
@@ -89,7 +92,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             ((SummaryViewHolder) holder).bind(filteredPlants);
         } else if (holder instanceof PlantViewHolder) {
             PlantReading plant = filteredPlants.get(position - 1);
-            ((PlantViewHolder) holder).bind(plant, expandedPlantNames, clickListener, viewModel);
+            ((PlantViewHolder) holder).bind(plant, expandedPlantNames, clickListener, viewModel, currentServerTime);
         }
         // EmptyViewHolder has no dynamic content to bind.
     }
@@ -178,7 +181,8 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
-        void bind(PlantReading plant, Set<String> expandedPlantNames, PlantClickListener clickListener, PlantViewModel viewModel) {
+        void bind(PlantReading plant, Set<String> expandedPlantNames, PlantClickListener clickListener,
+                  PlantViewModel viewModel, long currentServerTime) {
             PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
 
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
@@ -189,10 +193,8 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
             humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
 
-            long currentTime = viewModel.getCurrentServerTime();
-
             lastWatered.setText(DashboardUtils.formatRelativeLastWateredTime(
-                    plant.getLastWateredTimeMillis(), currentTime));
+                    plant.getLastWateredTimeMillis(), currentServerTime));
 
             boolean isExpanded = expandedPlantNames.contains(plant.getPlantName());
             expandableSection.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
@@ -201,7 +203,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
-                PlantViewBinder.bindConnectionStatus(connectionStatus, plant.getLastSeenMillis());
+                PlantViewBinder.bindConnectionStatus(connectionStatus, plant.getLastSeenMillis(), currentServerTime);
             }
 
             toggleButton.setOnClickListener(v -> {

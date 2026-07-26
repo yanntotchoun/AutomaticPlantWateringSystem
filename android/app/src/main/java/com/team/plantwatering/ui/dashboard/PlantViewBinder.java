@@ -64,10 +64,14 @@ public final class PlantViewBinder {
         percentView.setTextColor(DashboardUtils.tankTextColor(waterTank, fullThreshold));
     }
 
-    public static void bindConnectionStatus(TextView statusView, long lastSeenMillis) {
-        long currentTime = System.currentTimeMillis();
-        boolean isOnline = (currentTime - lastSeenMillis) < 120_000L;
-        
+    /**
+     * Shows Online/Offline based on how long ago the plant last reported in.
+     * Takes the Firebase server-synced time (PlantViewModel.getCurrentServerTime())
+     * rather than the phone's local clock, so results aren't affected by device clock drift.
+     */
+    public static void bindConnectionStatus(TextView statusView, long lastSeenMillis, long currentServerTime) {
+        boolean isOnline = (currentServerTime - lastSeenMillis) < 120_000L;
+
         if (isOnline) {
             statusView.setText("Online");
             statusView.setTextColor(statusView.getContext().getColor(R.color.status_healthy_text));

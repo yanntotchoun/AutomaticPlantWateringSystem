@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiClientSecure.h> 
+#include <WiFiClientSecure.h>
 #include <FirebaseClient.h>
 #include "time.h"
 
@@ -24,7 +24,7 @@ const int daylightOffset=3600;
 
 
 // input network credentials
-const char* ssid = "AD"; 
+const char* ssid = "AD";
 const char* password = "William@2750";
 const char* ntpServer="pool.ntp.org";
 
@@ -62,6 +62,13 @@ double flow_rate = 0.0;
 volatile int pulse_count = 0;
 const double pulses_per_liter = 5880.0;
 
+
+
+String plant_id;
+
+
+bool plant_id_claimed = false;
+
 // Interrupt Service Routine used for flow rate measurement when the water pump is active
 void IRAM_ATTR flow_rate_ISR() {
   pulse_count++;
@@ -83,6 +90,27 @@ void WiFi_Disconnected_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info
   WiFi.begin(ssid, password);
 }
 
+//builds a plant_id string from the device's MAC address
+String buildPlantId() {
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  return mac + "_slot0";
+}
+
+// registers this device's plant_id in /plant_ids/ with taken:false,
+void registerPlantIdIfNeeded() {
+  String path = "/plant_ids/" + plant_id + "/taken";
+
+  bool exists = Database.get<bool>(aClient, path);
+  if (aClient.lastError().code() != 0) {
+    // path doesn't exist yet (or read failed) 
+    Database.set<bool>(aClient, path, false, processData, "RTDB_Register_PlantId");
+    Serial.println("Registered new plant_id slot: " + plant_id);
+  } else {
+    Serial.println("plant_id slot already registered, taken = " + String(exists));
+    plant_id_claimed = exists;
+  }
+}
 
 
 void setup() {
@@ -98,11 +126,11 @@ void setup() {
   Serial.begin(115200);
 
   // setting the wifi to station mode and disconnecting in case it was previously connected
-  //WiFi.mode(WIFI_STA); 
+  //WiFi.mode(WIFI_STA);
   WiFi.onEvent(ConnectedToAP_Handler, ARDUINO_EVENT_WIFI_STA_CONNECTED);
   WiFi.onEvent(GotIP_Handler, ARDUINO_EVENT_WIFI_STA_GOT_IP);
-  WiFi.onEvent(WiFi_Disconnected_Handler, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);  
-  WiFi.disconnect(); 
+  WiFi.onEvent(WiFi_Disconnected_Handler, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+  WiFi.disconnect();
 
   WiFi.mode(WIFI_STA);
   //WiFi.softAP(esp32_ssid, esp32_password);
@@ -112,14 +140,18 @@ void setup() {
   //Serial.println(IP);
 
   server.begin();
-  
+
   // connect to wifi using network credentials from user
-  WiFi.begin(ssid, password); 
+  WiFi.begin(ssid, password);
   // *while loop is for testing ONLY
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(100);
-  } 
+  }
+
+  // Now that WiFi is up, the MAC address is available - build this device's plant_id.
+  plant_id = buildPlantId();
+  Serial.println("This device's plant_id: " + plant_id);
 
   // Configure SSL client
 
@@ -143,7 +175,7 @@ void loop() {
   if (!getLocalTime(&timeInfo)){
     Serial.println("Failed to procure time");
   }
- 
+
   int sensorValue = analogRead(moisture_sensor); // reading moisture sensor value from 1380 (pure water) to 3560 (air)
   int moisturePercentage = 100 - ((sensorValue - 1380) * 100 / (3560 - 1380));
   if (moisturePercentage < 0) {
@@ -178,32 +210,46 @@ void loop() {
   app.loop();
   // Check if authentication is ready
   if (app.ready()) {
-    // Periodic data sending every minute
+
+    // Make sure our plant_id slot exists in the database (runs once effectively,
+    // since after the first successful registration plant_id_claimed reflects real state).
+    static bool registered = false;
+    if (!registered) {
+      registerPlantIdIfNeeded();
+      registered = true;
+    }
+
+    // Re-check claim status periodically in case a user just claimed this id in the app.
+    // Cheap read, done on the same interval as sensor sends.
     unsigned long currentTime = millis();
     if (currentTime - lastSendTime >= sendInterval){
-      // Update the last send time
       lastSendTime = currentTime;
-      Serial.println("Current time:");
-      Serial.println(currentTime);
 
-      Database.set<int>(aClient,"/plants/plant1/water_pump_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
+      bool taken = Database.get<bool>(aClient, "/plant_ids/" + plant_id + "/taken");
+      plant_id_claimed = taken;
 
-      // Send moisture level
-      Database.set<int>(aClient, "/plants/plant1/moisture_level", moisturePercentage, processData, "RTDB_Send_MoistureLevel");
+      if (!plant_id_claimed) {
+        Serial.println("plant_id not yet claimed in the app - not sending sensor data.");
+      } else {
+        String plantPath = "/plants/" + plant_id;
 
-      // Send water tank state
-      Database.set<String>(aClient, "/plants/plant1/water_level", messageWater, processData, "RTDB_Send_WaterLevel");
+        Database.set<int>(aClient, (plantPath + "/water_pump_state").c_str(), 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
 
+        // Send moisture level
+        Database.set<int>(aClient, (plantPath + "/moisture_level").c_str(), moisturePercentage, processData, "RTDB_Send_MoistureLevel");
 
-      // Send last time watered
-      Database.set<String>(aClient, "/plants/plant1/last_time", timeWatered, processData, "RTDB_Send_Time");
+        // Send water tank state
+        Database.set<String>(aClient, (plantPath + "/water_level").c_str(), messageWater, processData, "RTDB_Send_WaterLevel");
 
-      // Receive the required state of the water pump from the database
-      current_pump_state = Database.get<int>(aClient, "/plants/plant1/water_pump_state");
+        // Send last time watered
+        Database.set<String>(aClient, (plantPath + "/last_time").c_str(), timeWatered, processData, "RTDB_Send_Time");
 
+        // Receive the required state of the water pump from the database
+        current_pump_state = Database.get<int>(aClient, (plantPath + "/water_pump_state").c_str());
+      }
     }
   }
-  
+
   if (current_pump_state == 1 && previous_pump_state == 0) {
     // Turn the water pump on for a set duration
     digitalWrite(water_pump, HIGH);
@@ -223,11 +269,11 @@ void loop() {
   }
 
   // Update the previous water pump state for next loop iteration
-  previous_pump_state = current_pump_state; 
+  previous_pump_state = current_pump_state;
 
   current_pump_state = 0; // FOR TESTING
 
-  
+
   delay(20000); // Delay for two seconds before the next reading
 }
 
@@ -238,10 +284,9 @@ void processData(AsyncResult &result) {
   if (result.isError()) {
     Firebase.printf("Upload failed: %s\n", result.error().message().c_str());
     return;
-  }  
+  }
 
   if (result.available())
     Firebase.printf("Upload successful: %s\n", result.uid().c_str());
-    
-}
+
 }

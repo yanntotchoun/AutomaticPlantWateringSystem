@@ -20,7 +20,10 @@ import com.team.plantwatering.data.PlantReading;
 
 public class AddPlantFragment extends Fragment {
     EditText name;
-    Button saveButton,cancelButton,connectButton;
+    Button saveButton, cancelButton;
+    TextView mcuStatus;
+    private boolean slotAvailable = false;
+
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
     }
@@ -44,23 +47,55 @@ public class AddPlantFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         PlantViewModel viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
-        
+
         name = view.findViewById(R.id.edit_plant_name);
         saveButton = view.findViewById(R.id.button_save_plant);
         cancelButton = view.findViewById(R.id.button_cancel_add_plant);
-        connectButton = view.findViewById(R.id.button_connect_mcu); //hopefully this works for sprint 2
+        mcuStatus = view.findViewById(R.id.text_mcu_status);
 
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.add_plant_title);
         ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.add_plant_subtitle);
 
+        // No manual "connect" step: check the database for an available id
+        // as soon as the screen opens, since the ESP32 registers its own ids automatically.
+        saveButton.setEnabled(false);
+        mcuStatus.setText(R.string.mcu_checking_availability);
+
+        viewModel.checkIdAvailability(available -> requireActivity().runOnUiThread(() -> {
+            slotAvailable = available;
+            if (available) {
+                mcuStatus.setText(R.string.mcu_slot_ready);
+                saveButton.setEnabled(true);
+            } else {
+                mcuStatus.setText(R.string.mcu_no_slots);
+                saveButton.setEnabled(false);
+            }
+        }));
+
         saveButton.setOnClickListener(v -> {
             String plantName = name.getText().toString();
-            if (!plantName.isEmpty()) {
-                viewModel.addPlant(plantName);
-                // Return to dashboard after saving
-                getParentFragmentManager().popBackStack();
+            if (plantName.isEmpty() || !slotAvailable) {
+                return;
             }
+
+            saveButton.setEnabled(false);
+            viewModel.addPlant(plantName, new PlantViewModel.AddPlantCallback() {
+                @Override
+                public void onSuccess(String plantId) {
+                    requireActivity().runOnUiThread(() ->
+                            getParentFragmentManager().popBackStack());
+                }
+
+                @Override
+                public void onNoSlotsAvailable() {
+                    requireActivity().runOnUiThread(() -> {
+                        mcuStatus.setText(R.string.mcu_no_slots);
+                        slotAvailable = false;
+                        saveButton.setEnabled(false);
+                    });
+                }
+            });
         });
 
         cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
