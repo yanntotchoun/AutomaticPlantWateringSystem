@@ -63,4 +63,17 @@ public final class PlantViewBinder {
         percentView.setText(String.format(Locale.getDefault(), "%d%%", waterTank));
         percentView.setTextColor(DashboardUtils.tankTextColor(waterTank, fullThreshold));
     }
+
+    public static void bindConnectionStatus(TextView statusView, long lastSeenMillis) {
+        long currentTime = System.currentTimeMillis();
+        boolean isOnline = (currentTime - lastSeenMillis) < 120_000L;
+        
+        if (isOnline) {
+            statusView.setText("Online");
+            statusView.setTextColor(statusView.getContext().getColor(R.color.status_healthy_text));
+        } else {
+            statusView.setText("Offline");
+            statusView.setTextColor(statusView.getContext().getColor(R.color.error_red));
+        }
+    }
 }

@@ -68,10 +68,6 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    /**
-     * Swaps the visible tab fragment without adding it to the back stack,
-     * and clears any Details screen that may have been on top.
-     */
     private void showTabFragment(Fragment fragment) {
         // Clear any PlantDetailsFragment (and its back stack entry) that might be showing.
         getSupportFragmentManager().popBackStack(

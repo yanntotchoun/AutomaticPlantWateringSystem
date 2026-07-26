@@ -81,7 +81,6 @@ public class SettingsFragment extends BaseFragment {
         setUpNotifications(view, dropdown);
         setUpWateringReminders(view, dropdown);
 
-
         view.findViewById(R.id.button_back).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
                 MainActivity activity = (MainActivity) getActivity();
@@ -255,6 +254,7 @@ public class SettingsFragment extends BaseFragment {
         View humidityRow = view.findViewById(R.id.row_low_humidity_alerts);
         View tankRow = view.findViewById(R.id.row_low_tank_alerts);
         View reminderRow = view.findViewById(R.id.row_watering_reminder_alerts);
+        View disconnectionRow = view.findViewById(R.id.row_disconnection_alerts);
 
         ((TextView) enabledRow.findViewById(R.id.text_label)).setText(R.string.enable_notifications);
         ((TextView) enabledRow.findViewById(R.id.text_description)).setText(R.string.enable_notifications_desc);
@@ -265,23 +265,28 @@ public class SettingsFragment extends BaseFragment {
         ((TextView) tankRow.findViewById(R.id.text_label)).setText(R.string.low_tank_alerts);
         ((TextView) tankRow.findViewById(R.id.text_description)).setText(R.string.low_tank_alerts_desc);
 
+        ((TextView) disconnectionRow.findViewById(R.id.text_label)).setText(R.string.disconnection_alerts);
+        ((TextView) disconnectionRow.findViewById(R.id.text_description)).setText(R.string.disconnection_desc);
+
         SwitchMaterial notificationsSwitch = enabledRow.findViewById(R.id.switch_toggle);
         SwitchMaterial humiditySwitch = humidityRow.findViewById(R.id.switch_toggle);
         SwitchMaterial tankSwitch = tankRow.findViewById(R.id.switch_toggle);
         SwitchCompat reminderSwitch = reminderRow.findViewById(R.id.switch_toggle);
+        SwitchMaterial disconnectionSwitch = disconnectionRow.findViewById(R.id.switch_toggle);
 
         boolean notificationsEnabled = settingsManager.isNotificationsEnabled();
         notificationsSwitch.setChecked(notificationsEnabled);
         humiditySwitch.setChecked(settingsManager.isLowHumidityAlertsEnabled());
         tankSwitch.setChecked(settingsManager.isLowTankAlertsEnabled());
+        disconnectionSwitch.setChecked(settingsManager.isDisconnectionAlertsEnabled());
 
-        applyDependentEnabledState(humidityRow, tankRow, reminderRow, 
-                humiditySwitch, tankSwitch, reminderSwitch, dropdown, notificationsEnabled);
+        applyDependentEnabledState(humidityRow, tankRow, reminderRow, disconnectionRow,
+                humiditySwitch, tankSwitch, reminderSwitch, disconnectionSwitch, dropdown, notificationsEnabled);
 
         notificationsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             settingsManager.setNotificationsEnabled(isChecked);
-            applyDependentEnabledState(humidityRow, tankRow, reminderRow, 
-                    humiditySwitch, tankSwitch, reminderSwitch, dropdown, isChecked);
+            applyDependentEnabledState(humidityRow, tankRow, reminderRow, disconnectionRow,
+                    humiditySwitch, tankSwitch, reminderSwitch, disconnectionSwitch, dropdown, isChecked);
             
             if (isChecked) {
                 checkNotificationPermission();
@@ -298,6 +303,9 @@ public class SettingsFragment extends BaseFragment {
 
         tankSwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
                 settingsManager.setLowTankAlertsEnabled(isChecked));
+
+        disconnectionSwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
+                settingsManager.setDisconnectionAlertsEnabled(isChecked));
     }
 
     private void setUpWateringReminders(View view, AutoCompleteTextView dropdown) {
@@ -384,13 +392,15 @@ public class SettingsFragment extends BaseFragment {
         }
     }
 
-    private void applyDependentEnabledState(View humidityRow, View tankRow, View reminderRow,
+    private void applyDependentEnabledState(View humidityRow, View tankRow, View reminderRow, View disconnectionRow,
                                             SwitchMaterial humiditySwitch, SwitchMaterial tankSwitch,
-                                            SwitchCompat reminderSwitch, AutoCompleteTextView dropdown,
+                                            SwitchCompat reminderSwitch, SwitchMaterial disconnectionSwitch,
+                                            AutoCompleteTextView dropdown,
                                             boolean enabled) {
         humiditySwitch.setEnabled(enabled);
         tankSwitch.setEnabled(enabled);
         reminderSwitch.setEnabled(enabled);
+        disconnectionSwitch.setEnabled(enabled);
 
         // Dropdown only enabled if Master is ON AND Reminder switch is ON
         if (dropdown != null) {
@@ -404,7 +414,7 @@ public class SettingsFragment extends BaseFragment {
                 ? ContextCompat.getColor(requireContext(), R.color.text_gray_666)
                 : ContextCompat.getColor(requireContext(), R.color.text_disabled_light);
 
-        View[] rows = {humidityRow, tankRow, reminderRow};
+        View[] rows = {humidityRow, tankRow, reminderRow, disconnectionRow};
         for (View row : rows) {
             if (row != null) {
                 ((TextView) row.findViewById(R.id.text_label)).setTextColor(labelColor);

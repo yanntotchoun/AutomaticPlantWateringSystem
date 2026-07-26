@@ -73,6 +73,8 @@
     <string name="low_humidity_alerts_desc">Notify when soil humidity is below the dry threshold.</string>
     <string name="low_tank_alerts">Low tank alerts</string>
     <string name="low_tank_alerts_desc">Notify when the water tank level is low.</string>
+    <string name="disconnection_alerts">Disconnection alerts</string>
+    <string name="disconnection_desc">Notify when a device loses connection to the system.</string>
     <string name="profile_name_hint">Profile Name</string>
     <string name="add_new_profile">Add New</string>
     <string name="delete_profile">Delete</string>

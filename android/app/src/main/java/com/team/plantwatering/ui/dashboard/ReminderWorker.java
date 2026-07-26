@@ -42,6 +42,15 @@ public class ReminderWorker extends Worker {
             return Result.success();
         }
 
+        // Send generic watering reminder if enabled
+        if (settingsManager.isWateringRemindersEnabled()) {
+            sendNotification(
+                    0, // Constant ID for generic reminder
+                    context.getString(R.string.reminder_notification_title),
+                    context.getString(R.string.reminder_notification_text)
+            );
+        }
+
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("plants");
         
         try {
@@ -53,8 +62,23 @@ public class ReminderWorker extends Worker {
                 Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class);
                 Integer tankLevel = plantSnapshot.child("water_tank").getValue(Integer.class);
                 String profileId = plantSnapshot.child("threshold_profile").getValue(String.class);
+                Long lastSeen = plantSnapshot.child("last_seen_millis").getValue(Long.class);
 
-                if (plantName == null || moisture == null || tankLevel == null) continue;
+                if (plantName == null) continue;
+
+                // Check Disconnection
+                if (settingsManager.isDisconnectionAlertsEnabled() && lastSeen != null) {
+                    long currentTime = System.currentTimeMillis();
+                    if ((currentTime - lastSeen) > 120_000L) { // 2 minutes threshold
+                        sendNotification(
+                                plantName.hashCode() + 3,
+                                "Device Offline: " + plantName,
+                                "The device hasn't been seen for over 2 minutes. Please check your connection."
+                        );
+                    }
+                }
+
+                if (moisture == null || tankLevel == null) continue;
 
                 PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(profileId);
 

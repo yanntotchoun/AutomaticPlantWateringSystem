@@ -12,6 +12,7 @@ public class PlantSettingsManager {
     private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
     private static final String KEY_LOW_HUMIDITY_ALERTS = "low_humidity_alerts";
     private static final String KEY_LOW_TANK_ALERTS = "low_tank_alerts";
+    private static final String KEY_DISCONNECTION_ALERTS = "disconnection_alerts";
     private static final String KEY_WATERING_REMINDERS_ENABLED = "watering_reminders_enabled";
 
     private static final String KEY_PROFILE_IDS = "profile_ids";
@@ -62,6 +63,14 @@ public class PlantSettingsManager {
 
     public void setLowTankAlertsEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply();
+    }
+
+    public boolean isDisconnectionAlertsEnabled() {
+        return prefs.getBoolean(KEY_DISCONNECTION_ALERTS, true);
+    }
+
+    public void setDisconnectionAlertsEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_DISCONNECTION_ALERTS, enabled).apply();
     }
 
     public boolean isWateringRemindersEnabled() {

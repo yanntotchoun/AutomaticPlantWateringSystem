@@ -201,14 +201,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
-
-                if (plant.isOnline(currentTime)) { //The connection status appears here when the user clicks on "show plant information".
-                    connectionStatus.setText("Online");
-                    connectionStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
-                } else {
-                    connectionStatus.setText("Offline");
-                    connectionStatus.setTextColor(android.graphics.Color.parseColor("#9C1C16"));
-                }
+                PlantViewBinder.bindConnectionStatus(connectionStatus, plant.getLastSeenMillis());
             }
 
             toggleButton.setOnClickListener(v -> {
