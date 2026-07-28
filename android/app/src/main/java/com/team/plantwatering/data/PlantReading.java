@@ -12,13 +12,25 @@ public class PlantReading implements Parcelable {
     private final String thresholdId;
     private final long lastSeenMillis;
 
+    // Manual Watering Control Fields (Task BSCK-8.1)
+    private final boolean manualWateringCommand;
+    private final int manualWateringDuration;
+    private final String wateringMode;
+    private final boolean isPumpActive;
+    private final boolean autoWateringEnabled;
+
     public PlantReading(
             String plantName,
             int soilHumidity,
             int waterTank,
             long lastWateredTimeMillis,
             String thresholdId,
-            long lastSeenMillis
+            long lastSeenMillis,
+            boolean manualWateringCommand,
+            int manualWateringDuration,
+            String wateringMode,
+            boolean isPumpActive,
+            boolean autoWateringEnabled
     ) {
         this.plantName = plantName;
         this.soilHumidity = soilHumidity;
@@ -26,6 +38,11 @@ public class PlantReading implements Parcelable {
         this.lastWateredTimeMillis = lastWateredTimeMillis;
         this.thresholdId = thresholdId;
         this.lastSeenMillis = lastSeenMillis;
+        this.manualWateringCommand = manualWateringCommand;
+        this.manualWateringDuration = manualWateringDuration;
+        this.wateringMode = wateringMode;
+        this.isPumpActive = isPumpActive;
+        this.autoWateringEnabled = autoWateringEnabled;
     }
 
     protected PlantReading(Parcel in) {
@@ -35,6 +52,11 @@ public class PlantReading implements Parcelable {
         lastWateredTimeMillis = in.readLong();
         thresholdId = in.readString();
         lastSeenMillis = in.readLong();
+        manualWateringCommand = in.readByte() != 0;
+        manualWateringDuration = in.readInt();
+        wateringMode = in.readString();
+        isPumpActive = in.readByte() != 0;
+        autoWateringEnabled = in.readByte() != 0;
     }
 
     public static final Creator<PlantReading> CREATOR = new Creator<PlantReading>() {
@@ -73,12 +95,30 @@ public class PlantReading implements Parcelable {
         return lastSeenMillis;
     }
 
-    public boolean isOnline() {
-        // When the plant is first added, the connection status will be set to online if seen in the last 2 minutes.
-        // The user then has two minutes to connect the MCU before the status switches to offline.
-        return (System.currentTimeMillis() - lastSeenMillis) < 120_000L;
+    public boolean isOnline(long currentServerTime) {
+        // Use server-synced time instead of device time to avoid clock drift issues
+        return (currentServerTime - lastSeenMillis) < 120_000L;
     }
 
+    public boolean isManualWateringCommand() {
+        return manualWateringCommand;
+    }
+
+    public int getManualWateringDuration() {
+        return manualWateringDuration;
+    }
+
+    public String getWateringMode() {
+        return wateringMode;
+    }
+
+    public boolean isPumpActive() {
+        return isPumpActive;
+    }
+
+    public boolean isAutoWateringEnabled() {
+        return autoWateringEnabled;
+    }
 
     @Override
     public int describeContents() {
@@ -93,5 +133,10 @@ public class PlantReading implements Parcelable {
         dest.writeLong(lastWateredTimeMillis);
         dest.writeString(thresholdId);
         dest.writeLong(lastSeenMillis);
+        dest.writeByte((byte) (manualWateringCommand ? 1 : 0));
+        dest.writeInt(manualWateringDuration);
+        dest.writeString(wateringMode);
+        dest.writeByte((byte) (isPumpActive ? 1 : 0));
+        dest.writeByte((byte) (autoWateringEnabled ? 1 : 0));
     }
 }

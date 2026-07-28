@@ -48,7 +48,7 @@ public class AddPlantFragment extends Fragment {
         name = view.findViewById(R.id.edit_plant_name);
         saveButton = view.findViewById(R.id.button_save_plant);
         cancelButton = view.findViewById(R.id.button_cancel_add_plant);
-        connectButton = view.findViewById(R.id.button_connect_mcu);
+        connectButton = view.findViewById(R.id.button_connect_mcu); //hopefully this works for sprint 2
 
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.add_plant_title);

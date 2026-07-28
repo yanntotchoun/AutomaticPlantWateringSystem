@@ -12,8 +12,10 @@ public class PlantSettingsManager {
     private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
     private static final String KEY_LOW_HUMIDITY_ALERTS = "low_humidity_alerts";
     private static final String KEY_LOW_TANK_ALERTS = "low_tank_alerts";
+    private static final String KEY_WATERING_REMINDERS_ENABLED = "watering_reminders_enabled";
 
     private static final String KEY_PROFILE_IDS = "profile_ids";
+    private static final String KEY_REMINDER_FREQUENCY = "reminder_frequency";
 
     private final SharedPreferences prefs;
 
@@ -62,6 +64,20 @@ public class PlantSettingsManager {
         prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply();
     }
 
+    public boolean isWateringRemindersEnabled() {
+        return prefs.getBoolean(KEY_WATERING_REMINDERS_ENABLED, true);
+    }
+
+    public void setWateringRemindersEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_WATERING_REMINDERS_ENABLED, enabled).apply();
+    }
+    public String getReminderFrequency() {
+        return prefs.getString(KEY_REMINDER_FREQUENCY, "Every day");
+    }
+
+    public void setReminderFrequency(String frequency) {
+        prefs.edit().putString(KEY_REMINDER_FREQUENCY, frequency).apply();
+    }
 
     public static class ThresholdProfile {
         public final String id;

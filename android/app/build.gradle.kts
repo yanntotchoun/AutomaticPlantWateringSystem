@@ -33,6 +33,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.work:work-runtime:2.9.1")// necessary to add work manager library
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.database)
     implementation(libs.activity.ktx)

@@ -46,9 +46,10 @@ public class DashboardFragment extends BaseFragment {
             if (!userInterfaceUpdateNeeded) return;
 
             if (adapter != null) {
+                // Ensure all logic uses the server-synced time
                 adapter.notifyDataSetChanged();
             }
-            executeRunnable.postDelayed(this, 60_000);
+            executeRunnable.postDelayed(this, 10_000); // Increased frequency to 10s for better responsiveness
         }
     };
 
@@ -88,7 +89,7 @@ public class DashboardFragment extends BaseFragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_dashboard);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new DashboardListAdapter(allPlants, plant -> clickListener.onPlantClicked(plant));
+        adapter = new DashboardListAdapter(allPlants, plant -> clickListener.onPlantClicked(plant), viewModel);
         recyclerView.setAdapter(adapter);
 
         TextInputEditText searchEdit = view.findViewById(R.id.edit_search);
@@ -98,6 +99,9 @@ public class DashboardFragment extends BaseFragment {
             allPlants = plants;
             filterPlants(searchEdit.getText() != null ? searchEdit.getText().toString() : "");
         });
+
+        // Start listening for changes with context
+        viewModel.startListeningForChanges(requireContext());
 
         searchEdit.addTextChangedListener(new TextWatcher() {
             @Override
@@ -139,4 +143,3 @@ public class DashboardFragment extends BaseFragment {
         adapter.updatePlants(filtered);
     }
 }
-
