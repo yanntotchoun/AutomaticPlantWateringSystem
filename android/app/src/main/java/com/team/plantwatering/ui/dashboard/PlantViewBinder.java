@@ -56,12 +56,13 @@ public final class PlantViewBinder {
     }
 
 
-    public static void bindWaterTank(ImageView bucketView, TextView percentView, int waterTank, int fullThreshold) {
+    public static void bindWaterTank(ImageView bucketView, TextView statusView, String waterLevel) {
+        boolean isFull = waterLevel != null && (waterLevel.contains("Sufficient") || waterLevel.contains("Full"));
         bucketView.setImageResource(
-                waterTank >= fullThreshold ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail
+                isFull ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail
         );
-        percentView.setText(String.format(Locale.getDefault(), "%d%%", waterTank));
-        percentView.setTextColor(DashboardUtils.tankTextColor(waterTank, fullThreshold));
+        statusView.setText(waterLevel);
+        statusView.setTextColor(DashboardUtils.tankTextColor(waterLevel));
     }
 
     /**

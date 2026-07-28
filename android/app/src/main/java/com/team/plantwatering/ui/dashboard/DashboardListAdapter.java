@@ -116,16 +116,12 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             subtitle.setText(R.string.main_dashboard_overview);
 
             int avgHumidity = 0;
-            int avgTank = 0;
             if (!plants.isEmpty()) {
                 long sumHumidity = 0;
-                long sumTank = 0;
                 for (PlantReading plant : plants) {
                     sumHumidity += plant.getSoilHumidity();
-                    sumTank += plant.getWaterTank();
                 }
                 avgHumidity = Math.round((float) sumHumidity / plants.size());
-                avgTank = Math.round((float) sumTank / plants.size());
             }
 
             rowsContainer.removeAllViews();
@@ -133,7 +129,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             addRow(inflater, itemView.getContext().getString(R.string.plants_shown), String.valueOf(plants.size()));
             addRow(inflater, itemView.getContext().getString(R.string.average_soil_humidity), avgHumidity + "%");
-            addRow(inflater, itemView.getContext().getString(R.string.average_tank_level), avgTank + "%");
+            // Average tank level removed because it is now a status string.
         }
 
         private void addRow(LayoutInflater inflater, String label, String value) {
@@ -202,7 +198,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     isExpanded ? R.string.hide_plant_information : R.string.show_plant_information);
 
             if (isExpanded) {
-                PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank(), profile.fullTank);
+                PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank());
                 PlantViewBinder.bindConnectionStatus(connectionStatus, plant.getLastSeenMillis(), currentServerTime);
             }
 

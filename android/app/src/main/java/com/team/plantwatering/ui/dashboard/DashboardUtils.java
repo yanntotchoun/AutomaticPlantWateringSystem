@@ -66,12 +66,14 @@ public final class DashboardUtils {
     }
 
     /**
-     * Text color to use for the water tank percentage, based on level.
+     * Text color to use for the water tank level string.
      */
-    public static int tankTextColor(int waterTank, int fullThreshold) {
-        if (waterTank >= fullThreshold) {
+    public static int tankTextColor(String waterTank) {
+        if (waterTank == null) return Color.GRAY;
+        
+        if (waterTank.contains("Sufficient") || waterTank.contains("Full")) {
             return Color.parseColor("#2E7D32");
-        } else if (waterTank >= fullThreshold - 40) {
+        } else if (waterTank.contains("Low") || waterTank.contains("Medium")) {
             return Color.parseColor("#B26A00");
         } else {
             return Color.parseColor("#9C1C16");
@@ -122,11 +124,11 @@ public final class DashboardUtils {
      * Simple recommendation text based on the plant's current readings.
      * Ported from PlantDetailsScreen.kt's plantRecommendation().
      */
-    public static String plantRecommendation(PlantReading plant, int dryThreshold, int fullThreshold) {
+    public static String plantRecommendation(PlantReading plant, int dryThreshold) {
         if (plant.getSoilHumidity() < dryThreshold) {
             return plant.getPlantName()
                     + " is currently dry. Check the water tank and consider watering this plant soon.";
-        } else if (plant.getWaterTank() < fullThreshold - 40) {
+        } else if (plant.getWaterTank().contains("Low")) {
             return "The soil humidity is acceptable, but the water tank level is low. Refill the tank soon.";
         } else {
             return plant.getPlantName()

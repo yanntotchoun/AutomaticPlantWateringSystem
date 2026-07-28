@@ -142,7 +142,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
             PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(plant.getThresholdId());
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
             plantName.setText(plant.getPlantName());
-            humidityTank.setText(String.format(Locale.getDefault(), "Humidity: %d%%  |  Tank: %d%%",
+            humidityTank.setText(String.format(Locale.getDefault(), "Humidity: %d%%  |  Tank: %s",
                     plant.getSoilHumidity(), plant.getWaterTank()));
             PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
 

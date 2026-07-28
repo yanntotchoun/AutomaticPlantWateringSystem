@@ -106,8 +106,8 @@ public class PlantViewModel extends ViewModel {
                     if (h > 100) h = 100;
                     if (h < 0) h = 0;
 
-                    // Convert String water message to 100/10 for the UI graphics
-                    int w = (waterStr != null && waterStr.contains("Sufficient")) ? 100 : 10;
+                    // Water message from ESP (e.g. "Sufficient", "Low", "Connecting...")
+                    String w = (waterStr != null) ? waterStr : "Unknown";
                     long lw = parseFirmwareTimeToMillis(timeStr); // time translation for the ESP
                     long ls = lw; // last_time acts as both heartbeat and watering time
                     boolean mc = (pumpState != null && pumpState == 1); // pump action made by the user

@@ -154,8 +154,7 @@ public class PlantDetailsFragment extends Fragment {
         PlantViewBinder.bindWaterTank(
                 getView().findViewById(R.id.image_bucket),
                 getView().findViewById(R.id.text_water_tank_percent),
-                plant.getWaterTank(),
-                profile.fullTank
+                plant.getWaterTank()
         );
 
         lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
@@ -170,7 +169,7 @@ public class PlantDetailsFragment extends Fragment {
         }
 
         ((TextView) getView().findViewById(R.id.text_recommendation)).setText(
-                DashboardUtils.plantRecommendation(plant, profile.drySoil, profile.fullTank));
+                DashboardUtils.plantRecommendation(plant, profile.drySoil));
 
         currentProfileText.setText("Current: " + profile.name);
 
@@ -187,9 +186,9 @@ public class PlantDetailsFragment extends Fragment {
         
         stopWateringButton.setVisibility(isWatering ? View.VISIBLE : View.GONE);
         
-        waterNowButton.setEnabled(isOnline); //These buttons are only clickable if the ESP is online and pinging to the firebase.
-        quickRefreshButton.setEnabled(isOnline);
-        durationBar.setEnabled(isOnline);
+        waterNowButton.setEnabled(true); // Restrictions removed as requested
+        quickRefreshButton.setEnabled(true);
+        durationBar.setEnabled(true);
 
         offlineWarning.setVisibility(isOnline ? View.GONE : View.VISIBLE);
     }

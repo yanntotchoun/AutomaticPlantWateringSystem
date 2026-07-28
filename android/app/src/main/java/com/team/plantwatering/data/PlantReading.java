@@ -7,7 +7,7 @@ public class PlantReading implements Parcelable {
 
     private final String plantName;
     private final int soilHumidity;
-    private final int waterTank;
+    private final String waterTank;
     private final long lastWateredTimeMillis;
     private final String thresholdId;
     private final long lastSeenMillis;
@@ -22,7 +22,7 @@ public class PlantReading implements Parcelable {
     public PlantReading(
             String plantName,
             int soilHumidity,
-            int waterTank,
+            String waterTank,
             long lastWateredTimeMillis,
             String thresholdId,
             long lastSeenMillis,
@@ -48,7 +48,7 @@ public class PlantReading implements Parcelable {
     protected PlantReading(Parcel in) {
         plantName = in.readString();
         soilHumidity = in.readInt();
-        waterTank = in.readInt();
+        waterTank = in.readString();
         lastWateredTimeMillis = in.readLong();
         thresholdId = in.readString();
         lastSeenMillis = in.readLong();
@@ -79,7 +79,7 @@ public class PlantReading implements Parcelable {
         return soilHumidity;
     }
 
-    public int getWaterTank() {
+    public String getWaterTank() {
         return waterTank;
     }
 
@@ -129,7 +129,7 @@ public class PlantReading implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(plantName);
         dest.writeInt(soilHumidity);
-        dest.writeInt(waterTank);
+        dest.writeString(waterTank);
         dest.writeLong(lastWateredTimeMillis);
         dest.writeString(thresholdId);
         dest.writeLong(lastSeenMillis);
