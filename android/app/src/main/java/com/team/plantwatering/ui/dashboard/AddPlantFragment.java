@@ -26,7 +26,6 @@ public class AddPlantFragment extends Fragment {
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
     }
-    private PlantClickListener clickListener;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -35,11 +34,6 @@ public class AddPlantFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        if (context instanceof PlantClickListener) {
-            clickListener = (PlantClickListener) context;
-        } else {
-            throw new IllegalStateException("Host activity must implement PlantClickListener");
-        }
     }
 
     @Override
@@ -73,18 +67,9 @@ public class AddPlantFragment extends Fragment {
             PlantSettingsManager settingsManager = new PlantSettingsManager(requireContext());
             PlantSettingsManager.ThresholdProfile standardProfile = settingsManager.getThresholdProfile("standard");
             
-            viewModel.addPlant(plantName, standardProfile, new PlantViewModel.AddPlantCallback() {
-                @Override
-                public void onSuccess(String plantId) {
+            viewModel.addPlant(plantName, standardProfile, plantId ->
                     requireActivity().runOnUiThread(() ->
-                            getParentFragmentManager().popBackStack());
-                }
-
-                @Override
-                public void onNoSlotsAvailable() {
-                    // This will not be called in the simplified implementation
-                }
-            });
+                            getParentFragmentManager().popBackStack()));
         });
 
         cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());

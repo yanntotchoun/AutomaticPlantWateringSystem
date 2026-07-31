@@ -100,7 +100,7 @@ public class DashboardFragment extends BaseFragment {
         });
 
         // Start listening for changes with context
-        viewModel.startListeningForChanges(requireContext());
+        viewModel.startListeningForChanges();
 
         searchEdit.addTextChangedListener(new TextWatcher() {
             @Override
