@@ -106,8 +106,13 @@ public class SettingsFragment extends BaseFragment {
     private void setUpThresholds(View view) {
         TextView drySoilLabel = view.findViewById(R.id.text_dry_soil_threshold);
         Slider drySoilSlider = view.findViewById(R.id.slider_dry_soil_threshold);
+        
+        // Full tank threshold UI elements are now hidden since ESP reports status as string
         TextView fullTankLabel = view.findViewById(R.id.text_full_tank_threshold);
         Slider fullTankSlider = view.findViewById(R.id.slider_full_tank_threshold);
+        if (fullTankLabel != null) fullTankLabel.setVisibility(View.GONE);
+        if (fullTankSlider != null) fullTankSlider.setVisibility(View.GONE);
+
         RadioGroup profileGroup = view.findViewById(R.id.radio_group_profile_edit);
         TextInputEditText nameEdit = view.findViewById(R.id.edit_profile_name);
         View nameLayout = view.findViewById(R.id.layout_profile_name);
@@ -124,8 +129,6 @@ public class SettingsFragment extends BaseFragment {
             
             drySoilSlider.setValue(pendingChanges[0].drySoil);
             drySoilLabel.setText(getString(R.string.dry_soil_threshold_label, pendingChanges[0].drySoil));
-            fullTankSlider.setValue(pendingChanges[0].fullTank);
-            fullTankLabel.setText(getString(R.string.full_tank_threshold_label, pendingChanges[0].fullTank));
             
             nameEdit.setText(pendingChanges[0].name);
             nameLayout.setVisibility(View.GONE); // Hide name edit by default
@@ -150,7 +153,7 @@ public class SettingsFragment extends BaseFragment {
                 // Double-tap to rename
                 GestureDetector gestureDetector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
                     @Override
-                    public boolean onDoubleTap(MotionEvent e) {
+                    public boolean onDoubleTap(@NonNull MotionEvent e) {
                         if (!"standard".equals(profile.id)) {
                             nameLayout.setVisibility(View.VISIBLE);
                             nameEdit.requestFocus();
@@ -162,20 +165,23 @@ public class SettingsFragment extends BaseFragment {
                     }
                     
                     @Override
-                    public boolean onSingleTapConfirmed(MotionEvent e) {
+                    public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
                         rb.setChecked(true);
                         return true;
                     }
 
                     @Override
-                    public boolean onDown(MotionEvent e) {
+                    public boolean onDown(@NonNull MotionEvent e) {
                         return true;
                     }
                 });
 
                 rb.setOnTouchListener((v, event) -> {
-                    gestureDetector.onTouchEvent(event);
-                    return true;
+                    boolean handled = gestureDetector.onTouchEvent(event);
+                    if (event.getAction() == MotionEvent.ACTION_UP && !handled) {
+                        v.performClick();
+                    }
+                    return handled;
                 });
             }
         };
@@ -199,14 +205,6 @@ public class SettingsFragment extends BaseFragment {
             int intValue = Math.round(value);
             pendingChanges[0].drySoil = intValue;
             drySoilLabel.setText(getString(R.string.dry_soil_threshold_label, intValue));
-            confirmButton.setVisibility(View.VISIBLE);
-        });
-
-        fullTankSlider.addOnChangeListener((slider, value, fromUser) -> {
-            if (!fromUser) return;
-            int intValue = Math.round(value);
-            pendingChanges[0].fullTank = intValue;
-            fullTankLabel.setText(getString(R.string.full_tank_threshold_label, intValue));
             confirmButton.setVisibility(View.VISIBLE);
         });
 
@@ -234,7 +232,7 @@ public class SettingsFragment extends BaseFragment {
         addButton.setOnClickListener(v -> {
             String newId = "custom_" + System.currentTimeMillis();
             PlantSettingsManager.ThresholdProfile newProfile = new PlantSettingsManager.ThresholdProfile(
-                    newId, "New Profile", 30, 70);
+                    newId, "New Profile", 30, "Sufficient");
             settingsManager.saveThresholdProfile(newProfile);
             currentProfileId[0] = newId;
             populateProfiles.accept(newId);

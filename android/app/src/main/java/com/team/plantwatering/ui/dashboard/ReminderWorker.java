@@ -81,10 +81,6 @@ public class ReminderWorker extends Worker {
                 // water_level is stored as a descriptive String by the firmware
                 // (e.g. "Sufficient water is available"), not a numeric tank percentage.
                 String waterStr = plantSnapshot.child("water_level").getValue(String.class);
-                Integer tankLevel = null;
-                if (waterStr != null) {
-                    tankLevel = waterStr.contains("Sufficient") ? 100 : 10;
-                }
 
                 String profileId = plantSnapshot.child("threshold_profile").getValue(String.class);
 
@@ -94,7 +90,7 @@ public class ReminderWorker extends Worker {
                 Long lastSeen = parseFirmwareTimeToMillis(timeStr);
 
                 // Check Disconnection
-                if (settingsManager.isDisconnectionAlertsEnabled() && lastSeen != null && lastSeen > 0L) {
+                if (settingsManager.isDisconnectionAlertsEnabled() && lastSeen > 0L) {
                     if ((currentServerTime - lastSeen) > 120_000L) { // 2 minutes threshold
                         sendNotification(
                                 plantName.hashCode() + 3,
@@ -104,7 +100,7 @@ public class ReminderWorker extends Worker {
                     }
                 }
 
-                if (moisture == null || tankLevel == null || profileId == null) continue;
+                if (moisture == null || profileId == null) continue;
 
                 PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(profileId);
 
@@ -118,10 +114,8 @@ public class ReminderWorker extends Worker {
                 }
 
                 // Check Tank
-                // tankLevel here is a coarse 100/10 signal derived from the water_level
-                // message, not a real percentage - so this compares against fullTank
-                // as a simple "is the tank in the low state" check.
-                if (settingsManager.isLowTankAlertsEnabled() && tankLevel < profile.fullTank) {
+                // Alerts if the water status matches the trigger string (e.g. "Low")
+                if (settingsManager.isLowTankAlertsEnabled() && waterStr != null && waterStr.contains(profile.fullTank)) {
                     sendNotification(
                             plantName.hashCode() + 2,
                             "Low Water Tank: " + plantName,
