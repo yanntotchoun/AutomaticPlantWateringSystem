@@ -226,7 +226,7 @@ public class PlantDetailsFragment extends Fragment {
                 .setTitle("Select Threshold Profile")
                 .setItems(names, (dialog, which) -> {
                     PlantSettingsManager.ThresholdProfile selected = profiles.get(which);
-                    viewModel.updatePlantThreshold(plant.getPlantName(), selected.id);
+                    viewModel.updatePlantThreshold(plant.getPlantName(), selected);
                 })
                 .show();
     }

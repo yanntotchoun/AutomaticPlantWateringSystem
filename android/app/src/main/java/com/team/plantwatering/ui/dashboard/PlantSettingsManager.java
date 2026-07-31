@@ -82,6 +82,21 @@ public class PlantSettingsManager {
             this.drySoil = drySoil;
             this.fullTank = fullTank;
         }
+
+        /**
+         * Converts the descriptive tank string into a numeric threshold percentage
+         * that the hardware can use for comparison.
+         */
+        public int getFullTankValue() {
+            if (fullTank == null) return 30;
+            switch (fullTank) {
+                case "Low": return 15;
+                case "Medium": return 40;
+                case "Sufficient":
+                case "Full":
+                default: return 70;
+            }
+        }
     }
 
     public ThresholdProfile getThresholdProfile(String id) {

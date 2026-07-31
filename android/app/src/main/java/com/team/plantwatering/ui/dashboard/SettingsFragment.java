@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.team.plantwatering.MainActivity;
@@ -222,6 +223,11 @@ public class SettingsFragment extends BaseFragment {
         confirmButton.setOnClickListener(v -> {
             if (pendingChanges[0] != null) {
                 settingsManager.saveThresholdProfile(pendingChanges[0]);
+                
+                // Sync the change to all plants using this profile in Firebase
+                PlantViewModel viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
+                viewModel.syncProfileChangesToFirebase(pendingChanges[0]);
+
                 Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show();
                 confirmButton.setVisibility(View.GONE);
                 nameLayout.setVisibility(View.GONE);
@@ -240,7 +246,17 @@ public class SettingsFragment extends BaseFragment {
         });
 
         deleteButton.setOnClickListener(v -> {
-            settingsManager.deleteThresholdProfile(currentProfileId[0]);
+            String profileIdToDelete = currentProfileId[0];
+            
+            // 1. Sync Firebase first: Move all plants using this profile back to "standard"
+            PlantViewModel viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
+            PlantSettingsManager.ThresholdProfile standard = settingsManager.getThresholdProfile("standard");
+            viewModel.syncDeletionToFirebase(profileIdToDelete, standard);
+            
+            // 2. Delete from local settings
+            settingsManager.deleteThresholdProfile(profileIdToDelete);
+            
+            // 3. Update UI
             currentProfileId[0] = "standard";
             populateProfiles.accept(currentProfileId[0]);
             updateSliders.run();

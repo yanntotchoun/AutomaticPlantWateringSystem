@@ -22,7 +22,6 @@ public class AddPlantFragment extends Fragment {
     EditText name;
     Button saveButton, cancelButton;
     TextView mcuStatus;
-    private boolean slotAvailable = false;
 
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
@@ -57,30 +56,24 @@ public class AddPlantFragment extends Fragment {
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.add_plant_title);
         ((TextView) header.findViewById(R.id.text_header_subtitle)).setText(R.string.add_plant_subtitle);
 
-        // No manual "connect" step: check the database for an available id
-        // as soon as the screen opens, since the ESP32 registers its own ids automatically.
-        saveButton.setEnabled(false);
-        mcuStatus.setText(R.string.mcu_checking_availability);
-
-        viewModel.checkIdAvailability(available -> requireActivity().runOnUiThread(() -> {
-            slotAvailable = available;
-            if (available) {
-                mcuStatus.setText(R.string.mcu_slot_ready);
-                saveButton.setEnabled(true);
-            } else {
-                mcuStatus.setText(R.string.mcu_no_slots);
-                saveButton.setEnabled(false);
-            }
-        }));
+        // Slot implementation forgone. Enable save immediately.
+        saveButton.setEnabled(true);
+        mcuStatus.setVisibility(View.GONE);
 
         saveButton.setOnClickListener(v -> {
             String plantName = name.getText().toString();
-            if (plantName.isEmpty() || !slotAvailable) {
+            if (plantName.isEmpty()) {
+                name.setError("Please enter a name");
                 return;
             }
 
             saveButton.setEnabled(false);
-            viewModel.addPlant(plantName, new PlantViewModel.AddPlantCallback() {
+            
+            // Get the default "standard" profile to initialize thresholds
+            PlantSettingsManager settingsManager = new PlantSettingsManager(requireContext());
+            PlantSettingsManager.ThresholdProfile standardProfile = settingsManager.getThresholdProfile("standard");
+            
+            viewModel.addPlant(plantName, standardProfile, new PlantViewModel.AddPlantCallback() {
                 @Override
                 public void onSuccess(String plantId) {
                     requireActivity().runOnUiThread(() ->
@@ -89,11 +82,7 @@ public class AddPlantFragment extends Fragment {
 
                 @Override
                 public void onNoSlotsAvailable() {
-                    requireActivity().runOnUiThread(() -> {
-                        mcuStatus.setText(R.string.mcu_no_slots);
-                        slotAvailable = false;
-                        saveButton.setEnabled(false);
-                    });
+                    // This will not be called in the simplified implementation
                 }
             });
         });
