@@ -227,7 +227,9 @@ public class PlantViewModel extends ViewModel {
     }
 
     public void setAutoWateringMode(String plantId, boolean enabled) {
-        databaseReference.child(plantId).child("auto_watering_mode").setValue(enabled);
+        DatabaseReference plantRef = databaseReference.child(plantId);
+        plantRef.child("auto_watering_mode").setValue(enabled);
+        plantRef.child("watering_mode").setValue(enabled ? "automatic" : "manual");
     }
 
     /**
