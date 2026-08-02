@@ -83,8 +83,7 @@ public class PlantViewModel extends ViewModel {
                     if (thresholdProfileId == null) thresholdProfileId = "standard";
 
                     // Manual Watering Fields aligned with firmware key: "water_pump_state"
-                    Integer pumpState = plantSnapshot.child("water_pump_state").getValue(Integer.class);
-                    String mode = plantSnapshot.child("watering_mode").getValue(String.class);
+                    Boolean pumpState = plantSnapshot.child("water_pump_state").getValue(Boolean.class);
                     Boolean autoEnabled = plantSnapshot.child("auto_watering_mode").getValue(Boolean.class);
 
                     // Read the duration from the latest status check instead of hardcoding it
@@ -98,24 +97,37 @@ public class PlantViewModel extends ViewModel {
                     // Water message from ESP (e.g. "Sufficient", "Low", "Connecting...")
                     String w = (waterStr != null) ? waterStr : "Unknown";
                     long lw = parseFirmwareTimeToMillis(timeStr); // time translation for the ESP
-                    boolean mc = (pumpState != null && pumpState == 1); // pump action made by the user
+                    boolean mc = (pumpState != null && pumpState); // pump action made by the user
                     int md = (duration != null) ? duration : 3; // default to 3s if not found
-                    String m = (mode != null) ? mode : "manual"; //default mode set to manual
-                    boolean pa = (pumpState != null && pumpState == 1); // pump feedback (is the pump active?)
                     boolean ac = (autoEnabled != null) && autoEnabled; // auto mode feedback
 
                     // Note: key (slot id, e.g. "slot1") is used internally for all database
                     // operations; name is only for display. PlantReading stores the slot id as
                     // its identifying "name" field so requestManualWatering/deletePlant/etc
                     // keep working unchanged.
-                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, m, pa, ac));
+                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, ac));
                 }
                 plantsLiveData.setValue(updatedPlants);
+                updatePlantNamesNode(updatedPlants);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
         });
+    }
+
+    private void updatePlantNamesNode(List<PlantReading> plants) {
+        if (plants == null) return;
+
+        String namesList = "";
+        for (int i = 0; i < plants.size(); i++) {
+            namesList += plants.get(i).getPlantName();
+            if (i < plants.size() - 1) {
+                namesList += ", ";
+            }
+        }
+
+        FirebaseDatabase.getInstance().getReference("names").setValue(namesList);
     }
 
     private long parseFirmwareTimeToMillis(String timeStr) { // Time translation for the ESP
@@ -191,7 +203,7 @@ public class PlantViewModel extends ViewModel {
 
         plantRef.child("name").setValue(plantName);
         plantRef.child("moisture_level").setValue(0);
-        plantRef.child("water_level").setValue("Connecting...");
+        plantRef.child("water_level").setValue("Unknown");
 
         String nowStr = firmwareDateFormat.format(new Date());
         plantRef.child("last_time").setValue(nowStr);
@@ -201,10 +213,8 @@ public class PlantViewModel extends ViewModel {
         plantRef.child("threshold").setValue(profile.drySoil);
 
         // Initialize Manual Watering Fields
-        plantRef.child("water_pump_state").setValue(0);
+        plantRef.child("water_pump_state").setValue(false);
         plantRef.child("manual_watering_duration").setValue(3);
-        plantRef.child("watering_mode").setValue("manual");
-        plantRef.child("is_pump_active").setValue(false);
         plantRef.child("auto_watering_mode").setValue(true);
 
         if (callback != null) callback.onSuccess(plantId);
@@ -212,24 +222,19 @@ public class PlantViewModel extends ViewModel {
 
     // Removed claimSlotAndFillPlant as it's no longer needed without slot/taken logic
 
-    public void updateWateringMode(String plantId, String mode) { // As a design idea on the backend to switch manual to auto mode. Not functional yet
-        databaseReference.child(plantId).child("watering_mode").setValue(mode);
-    }
-
     public void requestManualWatering(String plantId, int duration) {
         DatabaseReference plantRef = databaseReference.child(plantId);
         plantRef.child("manual_watering_duration").setValue(duration);
-        plantRef.child("water_pump_state").setValue(1);
+        plantRef.child("water_pump_state").setValue(true);
     }
 
     public void stopManualWatering(String plantId) {
-        databaseReference.child(plantId).child("water_pump_state").setValue(0);
+        databaseReference.child(plantId).child("water_pump_state").setValue(false);
     }
 
     public void setAutoWateringMode(String plantId, boolean enabled) {
         DatabaseReference plantRef = databaseReference.child(plantId);
         plantRef.child("auto_watering_mode").setValue(enabled);
-        plantRef.child("watering_mode").setValue(enabled ? "automatic" : "manual");
     }
 
     /**

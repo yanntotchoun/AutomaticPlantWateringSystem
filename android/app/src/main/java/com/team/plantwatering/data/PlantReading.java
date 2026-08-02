@@ -15,8 +15,6 @@ public class PlantReading implements Parcelable {
     // Manual Watering Control Fields (Task BSCK-8.1)
     private final boolean manualWateringCommand;
     private final int manualWateringDuration;
-    private final String wateringMode;
-    private final boolean isPumpActive;
     private final boolean autoWateringEnabled;
 
     public PlantReading(
@@ -28,8 +26,6 @@ public class PlantReading implements Parcelable {
             long lastSeenMillis,
             boolean manualWateringCommand,
             int manualWateringDuration,
-            String wateringMode,
-            boolean isPumpActive,
             boolean autoWateringEnabled
     ) {
         this.plantName = plantName;
@@ -40,8 +36,6 @@ public class PlantReading implements Parcelable {
         this.lastSeenMillis = lastSeenMillis;
         this.manualWateringCommand = manualWateringCommand;
         this.manualWateringDuration = manualWateringDuration;
-        this.wateringMode = wateringMode;
-        this.isPumpActive = isPumpActive;
         this.autoWateringEnabled = autoWateringEnabled;
     }
 
@@ -54,8 +48,6 @@ public class PlantReading implements Parcelable {
         lastSeenMillis = in.readLong();
         manualWateringCommand = in.readByte() != 0;
         manualWateringDuration = in.readInt();
-        wateringMode = in.readString();
-        isPumpActive = in.readByte() != 0;
         autoWateringEnabled = in.readByte() != 0;
     }
 
@@ -95,9 +87,9 @@ public class PlantReading implements Parcelable {
         return lastSeenMillis;
     }
 
-    public boolean isOnline(long currentServerTime) {
-        // Use server-synced time instead of device time to avoid clock drift issues
-        return (currentServerTime - lastSeenMillis) < 120_000L;
+    public boolean isOnline() {
+        // Use 10-minute threshold (600 000ms) relative to local time, fix using local time instead of server-synced due to bug
+        return (System.currentTimeMillis() - lastSeenMillis) < 600_000L;
     }
 
     public boolean isManualWateringCommand() {
@@ -108,12 +100,9 @@ public class PlantReading implements Parcelable {
         return manualWateringDuration;
     }
 
-    public String getWateringMode() {
-        return wateringMode;
-    }
-
     public boolean isPumpActive() {
-        return isPumpActive;
+        // Derived from manualWateringCommand (water_pump_state)
+        return manualWateringCommand;
     }
 
     public boolean isAutoWateringEnabled() {
@@ -135,8 +124,6 @@ public class PlantReading implements Parcelable {
         dest.writeLong(lastSeenMillis);
         dest.writeByte((byte) (manualWateringCommand ? 1 : 0));
         dest.writeInt(manualWateringDuration);
-        dest.writeString(wateringMode);
-        dest.writeByte((byte) (isPumpActive ? 1 : 0));
         dest.writeByte((byte) (autoWateringEnabled ? 1 : 0));
     }
 }

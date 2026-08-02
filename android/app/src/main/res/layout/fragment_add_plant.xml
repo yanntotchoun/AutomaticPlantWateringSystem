@@ -110,14 +110,6 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Sensor readings arrive from the plant's ESP32 device once paired - nothing to enter here. -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            android:text="@string/sensor_readings_note"
-            android:textColor="@color/text_gray_666"
-            android:textSize="14sp" />
 
         <!-- Save / Cancel -->
         <com.google.android.material.button.MaterialButton
