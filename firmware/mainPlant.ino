@@ -1,3 +1,4 @@
+
 #define ENABLE_USER_AUTH
 #define ENABLE_DATABASE
 
@@ -16,9 +17,13 @@
 #define USER_PASSWORD "123456"
 
 #define water_sensor 13
-#define moisture_sensor 36
-#define water_pump 22
-#define flow_sensor 15
+#define moisture_sensor_A 36
+#define water_pump_A 22
+#define flow_sensor_A 15
+
+#define moisture_sensor_B 0
+#define water_pump_B 0
+#define flow_sensor_B 0
 
 const long gmtOffset=-18000; //-5 hours offset for EST from GMT, from seconds
 const int daylightOffset=3600;
@@ -52,16 +57,19 @@ AsyncClient aClient(ssl_client);
 RealtimeDatabase Database;
 //RealtimeDatabase StreamDatabase;
 
-
-struct hardwarePackage{
-  int moisture_sens;
-  int pump;
-  int flow_sens;
-  int moisture_threshold;
-  bool taken;
+// Holding necessary plant variables in one type
+struct hardwarePackage {
+  int moisture_sens; // Moisture sensor pin number
+  int pump; // Water pump pin number
+  int flow_sens; // Flow rate sensor pin number
+  int moisture_threshold; // Moisture threshold set by the app, originally initialized to 40
+  bool taken; // State of the hardware package (Is there a plant there)
+  String name; // Name of the plant. Set to NULL if there taken = 0
 };
 
-hardwarePackage bundle1 = {water_sensor, water_pump, flow_sensor, 40, false};
+// Initializing plant bundle structures
+hardwarePackage bundle1 = {moisture_sensor_A, water_pump_A, flow_sensor_A, 40, false, ""};
+hardwarePackage bundle2 = {moisture_sensor_B, water_pump_B, flow_sensor_B, 20, false, ""};
 
 // Intialization of time tracking variables
 unsigned long lastSendTime = 0;
@@ -104,16 +112,46 @@ void WiFi_Disconnected_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info
   WiFi.begin(ssid, password);
 }
 
+int getMoisture(int moisture_sensor_pin) {
+  int sensorValue = analogRead(moisture_sensor_pin);
+  int moisturePercentage = 100 - ((sensorValue - 1380) * 100 / (3560 - 1380));
+  if (moisturePercentage < 0) {
+    moisturePercentage = 0;
+  }
+  else if (moisturePercentage > 100){
+    moisturePercentage = 100;
+  }
+  
+  Serial.print("Soil Moisture Level: ");
+  Serial.print(moisturePercentage);
+  Serial.println("%");
 
+  return moisturePercentage;
+}
+
+String getWaterTankState(int float_sensor_pin){
+  int refillState = digitalRead(float_sensor_pin); // Reading float water sensor state
+  String messageWater;
+  if (refillState == 1) { // When input is HIGH -> bulb is lifted -> Water is sufficent
+    messageWater="Sufficient water is available";
+    Serial.println(messageWater);
+  }
+  else { // when input is LOW -> bulb is lowered -> Water supply needs a refill
+    messageWater="Insufficient water supply, please refill";
+    Serial.println(messageWater);
+  }
+
+  return messageWater;
+}
 
 void setup() {
   pinMode(water_sensor, INPUT_PULLUP); // setting the water sensor pin to input
 
-  pinMode(water_pump, OUTPUT); // Setting the water pump pin to output
-  digitalWrite(water_pump, LOW); // Set the water pump off to begin
+  pinMode(water_pump_A, OUTPUT); // Setting the water pump pin to output
+  digitalWrite(water_pump_A, LOW); // Set the water pump off to begin
 
-  pinMode(flow_sensor, INPUT); // Define the water flow sensor pin as an input
-  attachInterrupt(digitalPinToInterrupt(flow_sensor), flow_rate_ISR, RISING); // Attach ISR to flow sensor pin
+  pinMode(flow_sensor_A, INPUT); // Define the water flow sensor pin as an input
+  attachInterrupt(digitalPinToInterrupt(flow_sensor_A), flow_rate_ISR, RISING); // Attach ISR to flow sensor pin
 
 
   Serial.begin(115200);
@@ -157,39 +195,99 @@ void setup() {
 }
 
 
+
 void loop() {
 
   app.loop();
+  if (app.ready()) {
+    JsonDocument doc; 
+    String jsonString = Database.get<String>(aClient, "/plants"); // Pulls Nodes under plants in Json object
+
+    DeserializationError error = deserializeJson(doc, jsonString);
+    
+    if (error) { // handle error case
+      Serial.println(error.c_str());
+    }
+
+    // if no plants in database, make sure that both hardware bundles are deallocated
+    else if (doc.isNull()) {
+      Serial.println("No plants found. De-allocating sensors if needed");
+      bundle1.taken = false;
+      bundle1.name = "";
+
+      bundle2.taken = false;
+      bundle2.name = "";
+    }
+
+    else {
+      JsonObject plants = doc.as<JsonObject>();
+
+      int plantcount = sizeof(plants);
+      if (plantcount > 2) {
+        Serial.println("More than 2 plants in the database. Only two plant slots available");
+      }
+      
+      int loopCount = 0;
+
+      for (JsonPair plant : plants) {
+        if (loopCount >= 2) // Break the for loop if more than two plant objects in database
+          break;
+        
+        // Store the name of the plant in String for future reference
+        String name = plant.key().c_str();
+      
+        // Parse the attributes of the plant in data
+        JsonObject data = plant.value().as<JsonObject>();
+        Serial.println(name);
+
+        // Conditional clause handling new plant that isn't registered in hardware
+        if (data["taken"] == 0) {
+
+          if (bundle1.taken && bundle2.taken) {
+            Serial.println("Both hardware slots taken");
+          }
+
+          // First condition checks if bundle1 isn't taken and then checks if the plant is not already registered in bundle2
+          else if (!bundle1.taken && name != bundle2.name) { 
+
+            app.loop();
+            // Set the taken state in the database to TRUE
+            Database.set<bool>(aClient, "/plants/" + name + "/taken", 1, processData, "RTDB_Assigning " + name + " to bundle1");
+
+          }
+
+          else if (!bundle2.taken && name != bundle1.name) {
+            
+            app.loop();
+            // Set the taken state in the database to TRUE
+            Database.set<bool>(aClient, "/plants/" + name + "/taken", 1, processData, "RTDB_Assigning " + name + " to bundle1");
+          }
+        }
+
+        // Set the moisture threshold to the appropriate plant
+        if (name == bundle1.name){
+          bundle1.moisture_threshold = data["threshold"];
+        }
+        else if (name == bundle2.name){
+          bundle2.moisture_threshold = data["threshold"];
+        }
+
+      }
+    }    
+  }
+
   struct tm timeInfo;
   if (!getLocalTime(&timeInfo)){
     Serial.println("Failed to procure time");
   }
 
-  int sensorValue = analogRead(moisture_sensor); // reading moisture sensor value from 1380 (pure water) to 3560 (air)
-  int moisturePercentage = 100 - ((sensorValue - 1380) * 100 / (3560 - 1380));
-  if (moisturePercentage < 0) {
-    moisturePercentage = 0;
-  }
-  else if (moisturePercentage > 100){
-    moisturePercentage = 100;
-  }
 
-  String messageWater;
+  int moisturePercentage = getMoisture(moisture_sensor_A);
+
   char timeWateredChar[30];
   String timeWatered;
-  Serial.print("Soil Moisture Level: ");
-  Serial.print(moisturePercentage);
-  Serial.println("%");
+  String messageWater = getWaterTankState(water_sensor);
 
-  int refillState = digitalRead(water_sensor); // Reading float water sensor state
-  if (refillState == 1) { // When input is HIGH -> bulb is lifted -> Water is sufficent
-    messageWater="Sufficient water is available";
-    Serial.println(messageWater);
-  }
-  else { // when input is LOW -> bulb is lowered -> Water supply needs a refill
-    messageWater="Insufficient water supply, please refill";
-    Serial.println(messageWater);
-  }
 
   strftime(timeWateredChar,sizeof(timeWateredChar), "%A, %B %d %H:%M:%S", &timeInfo);
 
@@ -205,7 +303,7 @@ void loop() {
       // Update the last send time
       lastSendTime = currentTime;
 
-      Database.set<int>(aClient,"/plants/plant1/water_pump_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
+      Database.set<int>(aClient,"/plants/plant1/water_pump_A_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
 
       // Send moisture level
       Database.set<int>(aClient, "/plants/plant1/moisture_level", moisturePercentage, processData, "RTDB_Send_MoistureLevel");
@@ -228,7 +326,8 @@ void loop() {
     bool is_completed = Database.get<bool>(aClient, "/plants/plant1/latest_watering_status/is_completed");
     bool watering_mode = Database.get<bool>(aClient, "/plants/plant1/auto_watering_mode");
     String needs_water = Database.get<String>(aClient, "/plants/plant1/messageESP");
-    bundle1.moisture_threshold = Database.get<int>(aClient, "/plants/plant1/min_moisture");
+    int threshold = Database.get<int>(aClient, "/plants/plant1/threshold");
+    if (threshold != 0) bundle1.moisture_threshold = threshold;
     Serial.print("Moisture threshold: ");
     Serial.println(bundle1.moisture_threshold);
 
@@ -237,10 +336,11 @@ void loop() {
       Serial.println("MANUAL WATERING REQUEST ACKNOWLEDGED. TRIGGERING WATER PUMP...");
       int water_duration = Database.get<int>(aClient, "/plants/plant1/latest_watering_status/duration");
 
-      digitalWrite(water_pump, HIGH);
+      digitalWrite(water_pump_A, HIGH);
       delay(water_duration*100);
-      digitalWrite(water_pump, LOW);
+      digitalWrite(water_pump_A, LOW);
 
+      app.loop();
       Database.set<bool>(aClient, "/plants/plant1/latest_watering_status/is_completed", true, processData, "RTDB_ManualWateringLog_Update");
       Database.set<String>(aClient, "/plants/plant1/watering_log/time", timeWatered, processData,"RTDB_Send_wateringTime");
       Database.set<String>(aClient, "/plants1/plant1/watering_log/type", "Manual", processData);
@@ -249,10 +349,11 @@ void loop() {
     else if (watering_mode && needs_water == "NEEDS WATER") {
       Serial.println("TRIGGERING AUTO-WATERING MODE...");
 
-      digitalWrite(water_pump, HIGH);
+      digitalWrite(water_pump_A, HIGH);
       delay(3000);
-      digitalWrite(water_pump, LOW);
-
+      digitalWrite(water_pump_A, LOW);
+    
+      app.loop();
       Database.set<String>(aClient, "/plants/plant1/watering_log/time", timeWatered, processData,"RTDB_Send_wateringTime");
       Database.set<String>(aClient, "/plants1/plant1/watering_log/type", "Automatic", processData);
       Serial.println("AUTO-WATERING FINISHED");
@@ -265,9 +366,9 @@ void loop() {
   /**if (current_pump_state == 1 && previous_pump_state == 0) {
 
     // Turn the water pump on for a set duration
-    digitalWrite(water_pump, HIGH);
+    digitalWrite(water_pump_A, HIGH);
     delay(automatic_pump_time);
-    digitalWrite(water_pump, LOW);
+    digitalWrite(water_pump_A, LOW);
     total_flow = (pulse_count / pulses_per_liter); // Gives the amount of water dispensed in L
 
     Serial.print("Water dispensed: ");
@@ -364,6 +465,3 @@ void processData(AsyncResult &result) {
     }
   }
 } **/
-
-
-
