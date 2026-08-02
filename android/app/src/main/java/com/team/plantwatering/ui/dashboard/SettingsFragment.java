@@ -1,6 +1,8 @@
 package com.team.plantwatering.ui.dashboard;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -228,6 +230,9 @@ public class SettingsFragment extends BaseFragment {
                 PlantViewModel viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
                 viewModel.syncProfileChangesToFirebase(pendingChanges[0]);
 
+                // Signal the monitoring service to pick up the new threshold values
+                refreshMonitoringService();
+
                 Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show();
                 confirmButton.setVisibility(View.GONE);
                 nameLayout.setVisibility(View.GONE);
@@ -261,6 +266,30 @@ public class SettingsFragment extends BaseFragment {
             populateProfiles.accept(currentProfileId[0]);
             updateSliders.run();
         });
+    }
+
+    private void startMonitoringService() {
+        Context context = requireContext();
+        Intent intent = new Intent(context, PlantMonitoringService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
+    }
+
+    private void refreshMonitoringService() {
+        Context context = getContext();
+        if (context == null) return;
+        Intent intent = new Intent(context, PlantMonitoringService.class);
+        intent.setAction(PlantMonitoringService.ACTION_REFRESH_SETTINGS);
+        context.startService(intent);
+    }
+
+    private void stopMonitoringService() {
+        Context context = requireContext();
+        Intent intent = new Intent(context, PlantMonitoringService.class);
+        context.stopService(intent);
     }
 
     private void setUpNotifications(View view, AutoCompleteTextView dropdown) {
@@ -304,10 +333,12 @@ public class SettingsFragment extends BaseFragment {
             
             if (isChecked) {
                 checkNotificationPermission();
+                startMonitoringService();
                 if (settingsManager.isWateringRemindersEnabled() && dropdown != null) {
                     scheduleOrCancelReminder(dropdown.getText().toString());
                 }
             } else {
+                stopMonitoringService();
                 WorkManager.getInstance(requireContext()).cancelUniqueWork("watering_reminder");
             }
         });

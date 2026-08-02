@@ -39,7 +39,7 @@ public class DashboardFragment extends BaseFragment {
     private List<PlantReading> allPlants;
 
     private boolean userInterfaceUpdateNeeded = false;
-    private final Handler executeRunnable = new Handler(Looper.getMainLooper());
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private final Runnable updateUI = new Runnable() {
         @Override
         public void run() {
@@ -48,7 +48,7 @@ public class DashboardFragment extends BaseFragment {
             if (adapter != null) {
                 adapter.notifyDataSetChanged();
             }
-            executeRunnable.postDelayed(this, 10_000); // Increased frequency to 10s for better responsiveness
+            uiHandler.postDelayed(this, 10_000); // Increased frequency to 10s for better responsiveness
         }
     };
 
@@ -122,13 +122,21 @@ public class DashboardFragment extends BaseFragment {
     public void onResume() {
         super.onResume();
         userInterfaceUpdateNeeded = true;
-        executeRunnable.post(updateUI);
+        uiHandler.removeCallbacks(updateUI);
+        uiHandler.post(updateUI);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         userInterfaceUpdateNeeded = false;
+        uiHandler.removeCallbacks(updateUI);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        uiHandler.removeCallbacksAndMessages(null);
     }
 
     private void filterPlants(String searchText) {

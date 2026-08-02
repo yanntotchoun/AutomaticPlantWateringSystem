@@ -25,6 +25,13 @@ import java.util.Locale;
 public class PlantDetailsFragment extends Fragment {
     private static final String ARG_PLANT = "arg_plant";
     private static final long REFRESH_INTERVAL_MILLIS = 10_000L;
+
+    // Duration seekbar bounds
+    private static final int MIN_DURATION = 5;
+    private static final int MAX_DURATION = 60;
+    private static final int STEP = 5;
+    private static final int SEEK_MAX = MAX_DURATION - MIN_DURATION; // 55
+
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
     private TextView lastWateredText;
@@ -75,14 +82,16 @@ public class PlantDetailsFragment extends Fragment {
         currentProfileText = view.findViewById(R.id.text_current_profile);
         waterNowButton = view.findViewById(R.id.button_water_now);
         quickRefreshButton = view.findViewById(R.id.button_quick_refresh);
-        durationBar = view.findViewById(R.id.seekbar_duration); //This bar on the UI is controlled by the user's finger and increments by 5 seconds up to the max: 60 seconds.
+        durationBar = view.findViewById(R.id.seekbar_duration);
+        durationBar.setMax(SEEK_MAX); // Set max to 55 (so progress 0 is 5s, progress 55 is 60s)
+        durationBar.setProgress(0); 
         durationLabel = view.findViewById(R.id.text_duration_label);
         stopWateringButton = view.findViewById(R.id.button_stop_watering);
         offlineWarning = view.findViewById(R.id.text_offline_warning);
         autoWateringSwitch = view.findViewById(R.id.switch_auto_watering); //the switch for auto mode is implemented here on the UI.
 
         viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
-        
+
         autoWateringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (buttonView.isPressed()) {
                 viewModel.setAutoWateringMode(plant.getPlantName(), isChecked);
@@ -92,15 +101,25 @@ public class PlantDetailsFragment extends Fragment {
         durationBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int steppedProgress = (progress/5)*5;
-                int safeProgress = Math.max(10, steppedProgress); // Min 10 seconds
-
-                durationLabel.setText(String.format(Locale.getDefault(), "Custom Duration: %d seconds", safeProgress));
-                waterNowButton.setText(String.format(Locale.getDefault(), "Water Plant for %d s", safeProgress));
+                // Calculate the duration: leftmost (0) = 5s, rightmost (55) = 60s
+                // We snap the value to steps of 5 for the DISPLAY while dragging
+                int snappedDisplayValue = MIN_DURATION + ((progress / STEP) * STEP);
+                durationLabel.setText(String.format(Locale.getDefault(), "Custom Duration: %d seconds", snappedDisplayValue));
+                waterNowButton.setText(String.format(Locale.getDefault(), "Water Plant for %d s", snappedDisplayValue));
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {
+                // We ONLY force the progress bar thumb to a snapped position when the user lets go.
+                // This prevents the "fighting" feeling while dragging.
+                int rawProgress = seekBar.getProgress();
+                int snappedProgress = (rawProgress / STEP) * STEP;
+                seekBar.setProgress(snappedProgress);
+            }
         });
+
+        // Initialize UI text for the default 0 progress (5 seconds)
+        durationLabel.setText(String.format(Locale.getDefault(), "Custom Duration: %d seconds", MIN_DURATION));
+        waterNowButton.setText(String.format(Locale.getDefault(), "Water Plant for %d s", MIN_DURATION));
 
         viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
             for (PlantReading p : plants) {
@@ -117,9 +136,9 @@ public class PlantDetailsFragment extends Fragment {
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
 
         quickRefreshButton.setOnClickListener(v -> viewModel.requestManualWatering(plant.getPlantName(), 3)); //A basic refreshment that is convenient for most plants.
-        
+
         waterNowButton.setOnClickListener(v -> { //This is the custom button that allows the user to choose how long they want to water the plant.
-            int duration = (durationBar.getProgress() / 5) * 5;
+            int duration = MIN_DURATION + ((durationBar.getProgress() / STEP) * STEP);
             viewModel.requestManualWatering(plant.getPlantName(), duration);
         });
 
@@ -129,6 +148,13 @@ public class PlantDetailsFragment extends Fragment {
 
         MaterialButton backButton = view.findViewById(R.id.button_back);
         backButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Clear all callbacks to prevent leaks or "dead thread" issues
+        refreshHandler.removeCallbacksAndMessages(null);
     }
 
     private void updateUi() {
@@ -159,7 +185,7 @@ public class PlantDetailsFragment extends Fragment {
 
         lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
                 plant.getLastWateredTimeMillis(), viewModel.getCurrentServerTime()));
-        
+
         if (plant.isOnline(viewModel.getCurrentServerTime())) {
             connectionStatusText.setText("Online");
             connectionStatusText.setTextColor(android.graphics.Color.parseColor("#2E7D32"));
@@ -183,9 +209,9 @@ public class PlantDetailsFragment extends Fragment {
         quickRefreshButton.setVisibility(isWatering ? View.GONE : View.VISIBLE);
         durationBar.setVisibility(isWatering ? View.GONE : View.VISIBLE);
         durationLabel.setVisibility(isWatering ? View.GONE : View.VISIBLE);
-        
+
         stopWateringButton.setVisibility(isWatering ? View.VISIBLE : View.GONE);
-        
+
         waterNowButton.setEnabled(true); // Restrictions removed as requested
         quickRefreshButton.setEnabled(true);
         durationBar.setEnabled(true);
@@ -194,9 +220,15 @@ public class PlantDetailsFragment extends Fragment {
     }
 
     private void startPeriodicRefreshLoop() {
+        if (refreshRunnable != null) {
+            refreshHandler.removeCallbacks(refreshRunnable);
+        }
         refreshRunnable = new Runnable() {
             @Override
             public void run() {
+                if (getView() == null) {
+                    return; // Stop the loop if the view is gone
+                }
                 updateUi();
                 refreshHandler.postDelayed(this, REFRESH_INTERVAL_MILLIS);
             }
@@ -210,6 +242,7 @@ public class PlantDetailsFragment extends Fragment {
         if (refreshRunnable != null) {
             refreshHandler.removeCallbacks(refreshRunnable);
         }
+        refreshHandler.removeCallbacksAndMessages(null);
         lastWateredText = null;
         connectionStatusText = null;
         currentProfileText = null;

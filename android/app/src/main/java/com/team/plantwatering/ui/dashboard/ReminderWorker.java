@@ -76,7 +76,7 @@ public class ReminderWorker extends Worker {
                 String plantName = plantSnapshot.child("name").getValue(String.class);
                 if (plantName == null) plantName = key;
 
-                Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class);
+                Integer moisture = parseSafeInt(plantSnapshot.child("moisture_level").getValue());
 
                 // water_level is stored as a descriptive String by the firmware
                 // (e.g. "Sufficient water is available"), not a numeric tank percentage.
@@ -163,6 +163,22 @@ public class ReminderWorker extends Worker {
             return 0L;
         }
         return 0L;
+    }
+
+    private Integer parseSafeInt(Object value) {
+        if (value == null) return null;
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Long) return ((Long) value).intValue();
+        if (value instanceof Double) return ((Double) value).intValue();
+        if (value instanceof Boolean) return (Boolean) value ? 1 : 0;
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private void sendNotification(int id, String title, String text) {

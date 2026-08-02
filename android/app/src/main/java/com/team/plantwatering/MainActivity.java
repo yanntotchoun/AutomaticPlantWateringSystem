@@ -1,5 +1,7 @@
 package com.team.plantwatering;
 
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +20,7 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import java.util.concurrent.TimeUnit;
+import com.team.plantwatering.ui.dashboard.PlantMonitoringService;
 import com.team.plantwatering.ui.dashboard.PlantSettingsManager;
 
 
@@ -59,6 +62,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         checkAndScheduleReminders();
+        checkAndStartMonitoringService();
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             // If we returned to a tab fragment from the details, show the bottom nav again.
@@ -100,6 +104,18 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onPlantClicked(PlantReading plant) {
         openPlantDetails(plant);
+    }
+
+    private void checkAndStartMonitoringService() {
+        PlantSettingsManager settingsManager = new PlantSettingsManager(this);
+        if (settingsManager.isNotificationsEnabled()) {
+            Intent intent = new Intent(this, PlantMonitoringService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+        }
     }
 
     private void checkAndScheduleReminders() {

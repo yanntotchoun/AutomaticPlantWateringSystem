@@ -24,6 +24,7 @@ public class PlantViewModel extends ViewModel {
 
     private final MutableLiveData<List<PlantReading>> plantsLiveData = new MutableLiveData<>(new ArrayList<>());
     private final DatabaseReference databaseReference;
+    private ValueEventListener plantsListener;
 
     // Should match the firmware time format here
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
@@ -62,7 +63,9 @@ public class PlantViewModel extends ViewModel {
     }
 
     public void startListeningForChanges() {
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        if (plantsListener != null) return; // Already listening
+
+        plantsListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlantReading> updatedPlants = new ArrayList<>();
@@ -75,7 +78,7 @@ public class PlantViewModel extends ViewModel {
                     String name = plantSnapshot.child("name").getValue(String.class);
                     if (name == null) name = key;
 
-                    Integer moisture = plantSnapshot.child("moisture_level").getValue(Integer.class); //Those are the leaves of each child node
+                    Integer moisture = parseSafeInt(plantSnapshot.child("moisture_level").getValue()); //Those are the leaves of each child node
                     String waterStr = plantSnapshot.child("water_level").getValue(String.class);
                     String timeStr = plantSnapshot.child("last_time").getValue(String.class);
 
@@ -83,12 +86,18 @@ public class PlantViewModel extends ViewModel {
                     if (thresholdProfileId == null) thresholdProfileId = "standard";
 
                     // Manual Watering Fields aligned with firmware key: "water_pump_state"
-                    Integer pumpState = plantSnapshot.child("water_pump_state").getValue(Integer.class);
+                    Object pumpStateObj = plantSnapshot.child("water_pump_state").getValue();
+                    Integer pumpState = parseSafeInt(pumpStateObj);
+                    
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
                     Boolean autoEnabled = plantSnapshot.child("auto_watering_mode").getValue(Boolean.class);
 
                     // Read the duration from the latest status check instead of hardcoding it
-                    Integer duration = plantSnapshot.child("latest_watering_status").child("duration").getValue(Integer.class);
+                    Object durationObj = plantSnapshot.child("latest_watering_status").child("duration").getValue();
+                    Integer duration = parseSafeInt(durationObj);
+
+                    // Feedback field from ESP
+                    Boolean isPumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
 
                     int h = (moisture != null) ? moisture : 0;
                     // Ensure moisture stays within 0-100% range
@@ -101,7 +110,7 @@ public class PlantViewModel extends ViewModel {
                     boolean mc = (pumpState != null && pumpState == 1); // pump action made by the user
                     int md = (duration != null) ? duration : 3; // default to 3s if not found
                     String m = (mode != null) ? mode : "manual"; //default mode set to manual
-                    boolean pa = (pumpState != null && pumpState == 1); // pump feedback (is the pump active?)
+                    boolean pa = (isPumpActive != null && isPumpActive); // pump feedback (is the pump active?)
                     boolean ac = (autoEnabled != null) && autoEnabled; // auto mode feedback
 
                     // Note: key (slot id, e.g. "slot1") is used internally for all database
@@ -115,7 +124,16 @@ public class PlantViewModel extends ViewModel {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        };
+        databaseReference.addValueEventListener(plantsListener);
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        if (databaseReference != null && plantsListener != null) {
+            databaseReference.removeEventListener(plantsListener);
+        }
     }
 
     private long parseFirmwareTimeToMillis(String timeStr) { // Time translation for the ESP
@@ -135,6 +153,22 @@ public class PlantViewModel extends ViewModel {
             return 0L;
         }
         return 0L;
+    }
+
+    private Integer parseSafeInt(Object value) {
+        if (value == null) return null;
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Long) return ((Long) value).intValue();
+        if (value instanceof Double) return ((Double) value).intValue();
+        if (value instanceof Boolean) return (Boolean) value ? 1 : 0;
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     public void updatePlantThreshold(String plantId, PlantSettingsManager.ThresholdProfile profile) {
