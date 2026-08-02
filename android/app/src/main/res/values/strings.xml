@@ -35,6 +35,8 @@
     <string name="personalized_plant_page">Personalized Plant Page</string>
     <string name="plant_recommendation">Plant recommendation</string>
     <string name="back_to_dashboard">Back to dashboard</string>
+    <string name="watering_log_title">Recent watering events</string>
+    <string name="watering_log_empty">No watering events recorded yet.</string>
 
     <!-- AddPlant -->
     <string name="add_plant_title">Plant Adding</string>

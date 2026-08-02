@@ -19,12 +19,24 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import com.google.firebase.database.Query;
+import java.util.Collections;
+import android.util.Log;
 
 public class PlantViewModel extends ViewModel {
+    private static final String TAG = "PlantFirebase";
 
     private final MutableLiveData<List<PlantReading>> plantsLiveData = new MutableLiveData<>(new ArrayList<>());
     private final DatabaseReference databaseReference;
     private ValueEventListener plantsListener;
+
+    private static final int WATERING_LOG_LIMIT = 5;
+
+    private final MutableLiveData<List<Long>> wateringLogLiveData =
+            new MutableLiveData<>(new ArrayList<>());
+
+    private Query wateringLogQuery;
+    private ValueEventListener wateringLogListener;
 
     // Should match the firmware time format here
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
@@ -36,6 +48,38 @@ public class PlantViewModel extends ViewModel {
         databaseReference = FirebaseDatabase.getInstance().getReference("plants");
 
         listenForServerTimeOffset();
+        listenForFirebaseConnection();
+    }
+    private void listenForFirebaseConnection() {
+        FirebaseDatabase.getInstance()
+                .getReference(".info/connected")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(
+                            @NonNull DataSnapshot snapshot
+                    ) {
+                        Boolean connected =
+                                snapshot.getValue(Boolean.class);
+
+                        if (Boolean.TRUE.equals(connected)) {
+                            Log.d(TAG, "Connected to Firebase.");
+                        } else {
+                            Log.w(TAG, "Not connected to Firebase.");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(
+                            @NonNull DatabaseError error
+                    ) {
+                        Log.e(
+                                TAG,
+                                "Firebase connection check failed: "
+                                        + error.getMessage(),
+                                error.toException()
+                        );
+                    }
+                });
     }
 
     private void listenForServerTimeOffset() {
@@ -62,12 +106,87 @@ public class PlantViewModel extends ViewModel {
         return plantsLiveData;
     }
 
+    public LiveData<List<Long>> getWateringLog() {
+        return wateringLogLiveData;
+    }
+
+    /**
+     * Reads the five newest events from:
+     *
+     * /plants/{plantId}/watering_log/{eventId}/timestamp
+     */
+    public void startListeningForWateringLog(String plantId) {
+        stopListeningForWateringLog();
+
+        // Clear data left over from a previously opened plant.
+        wateringLogLiveData.setValue(new ArrayList<>());
+
+        wateringLogQuery = databaseReference
+                .child(plantId)
+                .child("watering_log")
+                .orderByChild("timestamp")
+                .limitToLast(WATERING_LOG_LIMIT);
+
+        wateringLogListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Long> wateringTimes = new ArrayList<>();
+
+                for (DataSnapshot eventSnapshot : snapshot.getChildren()) {
+                    Long timestamp = parseSafeLong(
+                            eventSnapshot
+                                    .child("timestamp")
+                                    .getValue()
+                    );
+
+                   //ignore the placeholder 0
+                    if (timestamp != null && timestamp > 0L) {
+                        wateringTimes.add(timestamp);
+                    }
+                }
+
+                // Firebase returns oldest to newest. Display newest first.
+                Collections.sort(
+                        wateringTimes,
+                        Collections.reverseOrder()
+                );
+
+                wateringLogLiveData.setValue(wateringTimes);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                wateringLogLiveData.setValue(new ArrayList<>());
+            }
+        };
+
+        wateringLogQuery.addValueEventListener(wateringLogListener);
+    }
+
+    public void stopListeningForWateringLog() {
+        if (wateringLogQuery != null
+                && wateringLogListener != null) {
+
+            wateringLogQuery.removeEventListener(
+                    wateringLogListener
+            );
+        }
+
+        wateringLogQuery = null;
+        wateringLogListener = null;
+    }
+
     public void startListeningForChanges() {
         if (plantsListener != null) return; // Already listening
 
         plantsListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Log.d(
+                        TAG,
+                        "Firebase read succeeded. Children under /plants: "
+                                + snapshot.getChildrenCount()
+                );
                 List<PlantReading> updatedPlants = new ArrayList<>();
                 for (DataSnapshot plantSnapshot : snapshot.getChildren()) { //Every plant captured here is a child of the "plants" node which is the root node.
                     String key = plantSnapshot.getKey();
@@ -124,11 +243,25 @@ public class PlantViewModel extends ViewModel {
                     // keep working unchanged.
                     updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, m, pa, ac, isTaken));
                 }
+                Log.d(
+                        TAG,
+                        "Plants successfully converted for the UI: "
+                                + updatedPlants.size()
+                );
                 plantsLiveData.setValue(updatedPlants);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(
+                        TAG,
+                        "Firebase /plants read failed. Code: "
+                                + error.getCode()
+                                + ". Message: "
+                                + error.getMessage(),
+                        error.toException()
+                );
+            }
         };
         databaseReference.addValueEventListener(plantsListener);
     }
@@ -136,9 +269,12 @@ public class PlantViewModel extends ViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
+
         if (databaseReference != null && plantsListener != null) {
             databaseReference.removeEventListener(plantsListener);
         }
+
+        stopListeningForWateringLog();
     }
 
     private long parseFirmwareTimeToMillis(String timeStr) { // Time translation for the ESP
@@ -158,6 +294,25 @@ public class PlantViewModel extends ViewModel {
             return 0L;
         }
         return 0L;
+    }
+    private Long parseSafeLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private Integer parseSafeInt(Object value) {
@@ -248,6 +403,10 @@ public class PlantViewModel extends ViewModel {
         plantRef.child("watering_mode").setValue("manual");
         plantRef.child("is_pump_active").setValue(false);
         plantRef.child("auto_watering_mode").setValue(true);
+        plantRef
+                .child("watering_log")
+                .child("placeholder")
+                .setValue(0);
 
         if (callback != null) callback.onSuccess(plantId);
     }
