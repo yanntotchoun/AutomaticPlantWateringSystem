@@ -52,6 +52,7 @@
     <string name="save_plant">Save Plant</string>
     <string name="watering_frequency_hint">Watering Frequency (days)</string>
     <string name="add_plant_intro">Enter your plant details and connect to your watering device to start monitoring.</string>
+    <string name="all_slots_occupied">All hardware slots are occupied.</string>
     <string name="cancel">Cancel</string>
     <string name="sensor_readings_note">Note: Sensor readings will appear once the device is connected.</string>
 
@@ -99,6 +100,6 @@
     <string name="wateringreminder">Watering Reminders</string>
     <string name="reminder_notification_title">Plant Watering Reminder</string>
     <string name="reminder_notification_text">It\'s time to check if your plants need watering!</string>
-    <string name="wateringreminder_description">Sets how often you\'ll get a reminder to manually water your plants and to check for low humidity or a low water tank level.</string>
+    <string name="wateringreminder_description">Sets how often you\'ll get a reminder to manually water your plants.</string>
 
 </resources>

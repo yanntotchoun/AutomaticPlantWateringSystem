@@ -72,52 +72,18 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Device pairing status (automatic, no manual connect action) -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/card_white"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="3dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/device_pairing"
-                    android:textColor="@color/text_dark_alt"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/text_mcu_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/mcu_checking_availability"
-                    android:textColor="@color/text_gray_666"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Sensor readings arrive from the plant's ESP32 device once paired - nothing to enter here. -->
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/text_slot_status"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            android:text="@string/sensor_readings_note"
-            android:textColor="@color/text_gray_666"
-            android:textSize="14sp" />
+            android:layout_marginTop="8dp"
+            android:textAlignment="center"
+            android:visibility="gone"
+            tools:text="All hardware slots are occupied."
+            tools:visibility="visible" />
 
         <!-- Save / Cancel -->
         <com.google.android.material.button.MaterialButton

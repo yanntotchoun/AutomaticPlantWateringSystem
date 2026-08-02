@@ -99,6 +99,11 @@ public class PlantViewModel extends ViewModel {
                     // Feedback field from ESP
                     Boolean isPumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
 
+                    // New: check 'taken' key for hardware slot availability
+                    Object takenObj = plantSnapshot.child("taken").getValue();
+                    Integer takenInt = parseSafeInt(takenObj);
+                    boolean isTaken = (takenInt != null && takenInt == 1);
+
                     int h = (moisture != null) ? moisture : 0;
                     // Ensure moisture stays within 0-100% range
                     if (h > 100) h = 100;
@@ -117,7 +122,7 @@ public class PlantViewModel extends ViewModel {
                     // operations; name is only for display. PlantReading stores the slot id as
                     // its identifying "name" field so requestManualWatering/deletePlant/etc
                     // keep working unchanged.
-                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, m, pa, ac));
+                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, m, pa, ac, isTaken));
                 }
                 plantsLiveData.setValue(updatedPlants);
             }
@@ -226,6 +231,9 @@ public class PlantViewModel extends ViewModel {
         plantRef.child("name").setValue(plantName);
         plantRef.child("moisture_level").setValue(0);
         plantRef.child("water_level").setValue("Connecting...");
+
+        // Mark as taken for hardware slot logic
+        plantRef.child("taken").setValue(1);
 
         String nowStr = firmwareDateFormat.format(new Date());
         plantRef.child("last_time").setValue(nowStr);

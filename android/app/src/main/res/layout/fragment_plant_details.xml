@@ -289,7 +289,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Custom Duration: 10 seconds"
+                        android:text="Custom Duration: 5 seconds"
                         android:textColor="@color/text_gray_555" />
 
                     <SeekBar
@@ -297,8 +297,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:max="60"
-                        android:progress="10" />
+                        android:max="55"
+                        android:progress="0"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_water_now"

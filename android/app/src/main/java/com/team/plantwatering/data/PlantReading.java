@@ -18,6 +18,7 @@ public class PlantReading implements Parcelable {
     private final String wateringMode;
     private final boolean isPumpActive;
     private final boolean autoWateringEnabled;
+    private final boolean isTaken;
 
     public PlantReading(
             String plantName,
@@ -30,7 +31,8 @@ public class PlantReading implements Parcelable {
             int manualWateringDuration,
             String wateringMode,
             boolean isPumpActive,
-            boolean autoWateringEnabled
+            boolean autoWateringEnabled,
+            boolean isTaken
     ) {
         this.plantName = plantName;
         this.soilHumidity = soilHumidity;
@@ -43,6 +45,7 @@ public class PlantReading implements Parcelable {
         this.wateringMode = wateringMode;
         this.isPumpActive = isPumpActive;
         this.autoWateringEnabled = autoWateringEnabled;
+        this.isTaken = isTaken;
     }
 
     protected PlantReading(Parcel in) {
@@ -57,6 +60,7 @@ public class PlantReading implements Parcelable {
         wateringMode = in.readString();
         isPumpActive = in.readByte() != 0;
         autoWateringEnabled = in.readByte() != 0;
+        isTaken = in.readByte() != 0;
     }
 
     public static final Creator<PlantReading> CREATOR = new Creator<PlantReading>() {
@@ -120,6 +124,10 @@ public class PlantReading implements Parcelable {
         return autoWateringEnabled;
     }
 
+    public boolean isTaken() {
+        return isTaken;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -138,5 +146,6 @@ public class PlantReading implements Parcelable {
         dest.writeString(wateringMode);
         dest.writeByte((byte) (isPumpActive ? 1 : 0));
         dest.writeByte((byte) (autoWateringEnabled ? 1 : 0));
+        dest.writeByte((byte) (isTaken ? 1 : 0));
     }
 }
