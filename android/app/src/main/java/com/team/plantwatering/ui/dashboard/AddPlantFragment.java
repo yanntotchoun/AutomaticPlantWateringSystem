@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.team.plantwatering.MainActivity;
 import com.team.plantwatering.R;
 import com.team.plantwatering.data.PlantReading;
 
@@ -96,8 +97,17 @@ public class AddPlantFragment extends Fragment {
             PlantSettingsManager.ThresholdProfile standardProfile = settingsManager.getThresholdProfile("standard");
             
             viewModel.addPlant(plantName, standardProfile, plantId ->
-                    requireActivity().runOnUiThread(() ->
-                            getParentFragmentManager().popBackStack()));
+                    requireActivity().runOnUiThread(() -> {
+                        name.setText("");
+                        saveButton.setEnabled(true);
+                        if (getActivity() instanceof MainActivity) {
+                            MainActivity activity = (MainActivity) getActivity();
+                            View navView = activity.findViewById(R.id.bottom_navigation);
+                            if (navView != null) {
+                                navView.findViewById(R.id.nav_dashboard).performClick();
+                            }
+                        }
+                    }));
         });
 
         cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());

@@ -316,16 +316,6 @@
                         android:textColor="#9C1C16"
                         android:visibility="gone"
                         app:strokeColor="#9C1C16" />
-
-                    <TextView
-                        android:id="@+id/text_offline_warning"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Device is offline. Manual control is disabled."
-                        android:textColor="#9C1C16"
-                        android:textSize="14sp"
-                        android:visibility="gone" />
                 </LinearLayout>
 
             </LinearLayout>

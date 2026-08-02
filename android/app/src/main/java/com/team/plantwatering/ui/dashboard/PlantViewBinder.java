@@ -7,6 +7,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.team.plantwatering.R;
+import com.team.plantwatering.data.PlantReading;
 
 import java.util.Locale;
 
@@ -70,10 +71,8 @@ public final class PlantViewBinder {
      * Takes the Firebase server-synced time (PlantViewModel.getCurrentServerTime())
      * rather than the phone's local clock, so results aren't affected by device clock drift.
      */
-    public static void bindConnectionStatus(TextView statusView, long lastSeenMillis, long currentServerTime) {
-        boolean isOnline = (currentServerTime - lastSeenMillis) < 120_000L;
-
-        if (isOnline) {
+    public static void bindConnectionStatus(TextView statusView, PlantReading plant) {
+        if (plant.isOnline()) {
             statusView.setText("Online");
             statusView.setTextColor(statusView.getContext().getColor(R.color.status_healthy_text));
         } else {

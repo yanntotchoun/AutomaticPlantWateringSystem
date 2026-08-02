@@ -59,10 +59,6 @@ public class ReminderWorker extends Worker {
         }
 
         try {
-            // Server-synced time, fetched once per run, so the disconnection check
-            // isn't vulnerable to this device's local clock drifting.
-            long currentServerTime = fetchServerTime();
-
             DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("plants");
             // Synchronously fetch data from Firebase (safe because WorkManager runs on background thread)
             DataSnapshot snapshot = Tasks.await(dbRef.get(), 10, TimeUnit.SECONDS);
@@ -91,11 +87,11 @@ public class ReminderWorker extends Worker {
 
                 // Check Disconnection
                 if (settingsManager.isDisconnectionAlertsEnabled() && lastSeen > 0L) {
-                    if ((currentServerTime - lastSeen) > 120_000L) { // 2 minutes threshold
+                    if ((System.currentTimeMillis() - lastSeen) > 600_000L) { // 10 minutes threshold
                         sendNotification(
                                 plantName.hashCode() + 3,
                                 "Device Offline: " + plantName,
-                                "The device hasn't been seen for over 2 minutes. Please check your connection."
+                                "The device hasn't been seen for over 10 minutes. Please check your connection."
                         );
                     }
                 }
