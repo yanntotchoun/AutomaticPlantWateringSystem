@@ -3,6 +3,8 @@ package com.team.plantwatering.ui.dashboard;
 import android.graphics.Color;
 
 import com.team.plantwatering.data.PlantReading;
+import java.text.DateFormat;
+import java.util.Date;
 
 public final class DashboardUtils {
 
@@ -25,6 +27,27 @@ public final class DashboardUtils {
      * Formats the elapsed time since the plant was last watered into a
      * human-friendly relative string, e.g. "5 minutes ago", "2 days ago".
      */
+    /**
+     * Converts a Firebase timestamp into a readable date and time,
+     * using the phone's language and time zone.
+     */
+    public static String formatWateringEventDateTime(
+            long timestampMillis
+    ) {
+        if (timestampMillis <= 0L) {
+            return "Unknown date and time";
+        }
+
+        DateFormat formatter =
+                DateFormat.getDateTimeInstance(
+                        DateFormat.MEDIUM,
+                        DateFormat.SHORT
+                );
+
+        return formatter.format(
+                new Date(timestampMillis)
+        );
+    }
     public static String formatRelativeLastWateredTime(long lastWateredTimeMillis, long currentTimeMillis) {
         // Make sure elapsed time never becomes negative, even if the device clock changes.
         long elapsedMillis = Math.max(currentTimeMillis - lastWateredTimeMillis, 0L);

@@ -22,6 +22,9 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.Locale;
+import android.widget.LinearLayout;
+import androidx.core.content.ContextCompat;
+import java.util.List;
 
 public class PlantDetailsFragment extends Fragment {
     private static final String ARG_PLANT = "arg_plant";
@@ -47,6 +50,8 @@ public class PlantDetailsFragment extends Fragment {
     private PlantReading plant;
     private PlantViewModel viewModel;
     private TextView currentProfileText;
+    private LinearLayout wateringLogContainer;
+    private TextView wateringLogEmptyText;
 
     public static PlantDetailsFragment newInstance(PlantReading plant) {
         PlantDetailsFragment fragment = new PlantDetailsFragment();
@@ -80,6 +85,11 @@ public class PlantDetailsFragment extends Fragment {
         lastWateredText = view.findViewById(R.id.text_last_watered);
         connectionStatusText = view.findViewById(R.id.text_connection_status);
         currentProfileText = view.findViewById(R.id.text_current_profile);
+        wateringLogContainer =
+                view.findViewById(R.id.layout_watering_log);
+
+        wateringLogEmptyText =
+                view.findViewById(R.id.text_watering_log_empty);
         waterNowButton = view.findViewById(R.id.button_water_now);
         quickRefreshButton = view.findViewById(R.id.button_quick_refresh);
         durationBar = view.findViewById(R.id.seekbar_duration);
@@ -122,6 +132,16 @@ public class PlantDetailsFragment extends Fragment {
                 }
             }
         });
+
+        viewModel.getWateringLog().observe(
+                getViewLifecycleOwner(),
+                this::renderWateringLog
+        );
+
+        viewModel.startListeningForWateringLog(
+                plant.getPlantName()
+        );
+
 
         startPeriodicRefreshLoop();
 
@@ -226,7 +246,71 @@ public class PlantDetailsFragment extends Fragment {
                     Toast.LENGTH_LONG).show();
         }
     }
+    private void renderWateringLog(
+            List<Long> wateringTimes
+    ) {
+        if (wateringLogContainer == null
+                || wateringLogEmptyText == null) {
+            return;
+        }
 
+        wateringLogContainer.removeAllViews();
+
+        if (wateringTimes == null
+                || wateringTimes.isEmpty()) {
+
+            wateringLogEmptyText.setVisibility(
+                    View.VISIBLE
+            );
+
+            return;
+        }
+
+        wateringLogEmptyText.setVisibility(
+                View.GONE
+        );
+
+        int verticalPadding = Math.round(
+                6 * getResources()
+                        .getDisplayMetrics()
+                        .density
+        );
+
+        for (int i = 0; i < wateringTimes.size(); i++) {
+            TextView eventText =
+                    new TextView(requireContext());
+
+            eventText.setText(
+                    String.format(
+                            Locale.getDefault(),
+                            "%d. %s",
+                            i + 1,
+                            DashboardUtils
+                                    .formatWateringEventDateTime(
+                                            wateringTimes.get(i)
+                                    )
+                    )
+            );
+
+            eventText.setTextSize(16);
+
+            eventText.setTextColor(
+                    ContextCompat.getColor(
+                            requireContext(),
+                            R.color.text_gray_555
+                    )
+            );
+
+            eventText.setPadding(
+                    0,
+                    verticalPadding,
+                    0,
+                    verticalPadding
+            );
+
+            wateringLogContainer.addView(eventText);
+        }
+    }
     private void startPeriodicRefreshLoop() {
         if (refreshRunnable != null) {
             refreshHandler.removeCallbacks(refreshRunnable);
@@ -247,13 +331,22 @@ public class PlantDetailsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
         if (refreshRunnable != null) {
-            refreshHandler.removeCallbacks(refreshRunnable);
+            refreshHandler.removeCallbacks(
+                    refreshRunnable
+            );
         }
+
         refreshHandler.removeCallbacksAndMessages(null);
+
+        viewModel.stopListeningForWateringLog();
+
         lastWateredText = null;
         connectionStatusText = null;
         currentProfileText = null;
+        wateringLogContainer = null;
+        wateringLogEmptyText = null;
     }
 
     private void showProfileSelector() {
