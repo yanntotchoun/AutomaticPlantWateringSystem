@@ -73,7 +73,7 @@ public class PlantMonitoringService extends Service {
                 
                 for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
                     String plantId = plantSnapshot.getKey();
-                    if (plantId == null || plantId.startsWith(".")) continue;
+                    if (plantId == null || plantId.startsWith(".") || plantId.equals("logs")) continue;
 
                     String plantName = plantSnapshot.child("name").getValue(String.class);
                     if (plantName == null) plantName = plantId;

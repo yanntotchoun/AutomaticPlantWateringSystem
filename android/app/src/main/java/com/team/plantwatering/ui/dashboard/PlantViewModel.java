@@ -29,6 +29,7 @@ public class PlantViewModel extends ViewModel {
     // Should match the firmware time format here
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
     private long serverTimeOffset = 0;
+    private String lastNamesList = null;
 
     public PlantViewModel() {
         // Fixed device slots (slot1, slot2, slot3...) live directly under "plants" -
@@ -87,18 +88,17 @@ public class PlantViewModel extends ViewModel {
 
                     // Manual Watering Fields aligned with firmware key: "water_pump_state"
                     Object pumpStateObj = plantSnapshot.child("water_pump_state").getValue();
-                    Integer pumpState = parseSafeInt(pumpStateObj);
+                    Boolean pumpState = parseSafeBoolean(pumpStateObj);
 
                     String mode = plantSnapshot.child("watering_mode").getValue(String.class);
-                    Boolean pumpState = plantSnapshot.child("water_pump_state").getValue(Boolean.class);
-                    Boolean autoEnabled = plantSnapshot.child("auto_watering_mode").getValue(Boolean.class);
+                    Boolean autoEnabled = parseSafeBoolean(plantSnapshot.child("auto_watering_mode").getValue());
 
                     // Read the duration from the latest status check instead of hardcoding it
                     Object durationObj = plantSnapshot.child("latest_watering_status").child("duration").getValue();
                     Integer duration = parseSafeInt(durationObj);
 
                     // Feedback field from ESP
-                    Boolean isPumpActive = plantSnapshot.child("is_pump_active").getValue(Boolean.class);
+                    Boolean isPumpActive = parseSafeBoolean(plantSnapshot.child("is_pump_active").getValue());
 
                     // New: check 'taken' key for hardware slot availability
                     Object takenObj = plantSnapshot.child("taken").getValue();
@@ -116,12 +116,14 @@ public class PlantViewModel extends ViewModel {
                     boolean mc = (pumpState != null && pumpState); // pump action made by the user
                     int md = (duration != null) ? duration : 3; // default to 3s if not found
                     boolean ac = (autoEnabled != null) && autoEnabled; // auto mode feedback
+                    String sm = (mode != null) ? mode : "Auto";
+                    boolean ipa = (isPumpActive != null && isPumpActive);
 
                     // Note: key (slot id, e.g. "slot1") is used internally for all database
                     // operations; name is only for display. PlantReading stores the slot id as
                     // its identifying "name" field so requestManualWatering/deletePlant/etc
                     // keep working unchanged.
-                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, ac));
+                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken));
                 }
                 plantsLiveData.setValue(updatedPlants);
                 updatePlantNamesNode(updatedPlants);
@@ -144,14 +146,20 @@ public class PlantViewModel extends ViewModel {
     private void updatePlantNamesNode(List<PlantReading> plants) {
         if (plants == null) return;
 
-        String namesList = "";
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < plants.size(); i++) {
-            namesList += plants.get(i).getPlantName();
+            sb.append(plants.get(i).getPlantName());
             if (i < plants.size() - 1) {
-                namesList += ", ";
+                sb.append(", ");
             }
         }
 
+        String namesList = sb.toString();
+        if (namesList.equals(lastNamesList)) {
+            return; // No change, skip database write
+        }
+
+        lastNamesList = namesList;
         FirebaseDatabase.getInstance().getReference("names").setValue(namesList);
     }
 
@@ -172,6 +180,19 @@ public class PlantViewModel extends ViewModel {
             return 0L;
         }
         return 0L;
+    }
+
+    private Boolean parseSafeBoolean(Object value) {
+        if (value == null) return null;
+        if (value instanceof Boolean) return (Boolean) value;
+        if (value instanceof Integer) return (Integer) value == 1;
+        if (value instanceof Long) return (Long) value == 1L;
+        if (value instanceof Double) return ((Double) value).intValue() == 1;
+        if (value instanceof String) {
+            String s = (String) value;
+            return s.equalsIgnoreCase("true") || s.equals("1");
+        }
+        return null;
     }
 
     private Integer parseSafeInt(Object value) {

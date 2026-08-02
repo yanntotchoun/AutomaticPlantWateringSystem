@@ -65,7 +65,7 @@ public class ReminderWorker extends Worker {
 
             for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
                 String key = plantSnapshot.getKey();
-                if (key == null) continue;
+                if (key == null || key.startsWith(".") || key.equals("logs")) continue;
 
                 // Display name lives in a "name" field now; fall back to the node key
                 // for older-format entries, same as PlantViewModel does.
