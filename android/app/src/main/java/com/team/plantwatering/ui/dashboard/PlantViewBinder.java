@@ -71,8 +71,8 @@ public final class PlantViewBinder {
      * Takes the Firebase server-synced time (PlantViewModel.getCurrentServerTime())
      * rather than the phone's local clock, so results aren't affected by device clock drift.
      */
-    public static void bindConnectionStatus(TextView statusView, PlantReading plant) {
-        if (plant.isOnline()) {
+    public static void bindConnectionStatus(TextView statusView, PlantReading plant, long currentServerTime) {
+        if (plant.isOnline(currentServerTime)) {
             statusView.setText("Online");
             statusView.setTextColor(statusView.getContext().getColor(R.color.status_healthy_text));
         } else {

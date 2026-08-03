@@ -104,7 +104,7 @@ public class PlantDetailsFragment extends Fragment {
         autoWateringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (buttonView.isPressed()) {
                 viewModel.setAutoWateringMode(plant.getPlantName(), isChecked);
-                if (!plant.isOnline()) {
+                if (!plant.isOnline(viewModel.getCurrentServerTime())) {
                     showOfflinePendingToast();
                 }
             }
@@ -149,7 +149,7 @@ public class PlantDetailsFragment extends Fragment {
 
         quickRefreshButton.setOnClickListener(v -> {
             viewModel.requestManualWatering(plant.getPlantName(), 3);
-            if (!plant.isOnline()) {
+            if (!plant.isOnline(viewModel.getCurrentServerTime())) {
                 showOfflinePendingToast();
             }
         }); //A basic refreshment that is convenient for most plants.
@@ -157,7 +157,7 @@ public class PlantDetailsFragment extends Fragment {
         waterNowButton.setOnClickListener(v -> { //This is the custom button that allows the user to choose how long they want to water the plant.
             int duration = MIN_DURATION + ((durationBar.getProgress() / STEP) * STEP);
             viewModel.requestManualWatering(plant.getPlantName(), duration);
-            if (!plant.isOnline()) {
+            if (!plant.isOnline(viewModel.getCurrentServerTime())) {
                 showOfflinePendingToast();
             }
         });
@@ -205,8 +205,9 @@ public class PlantDetailsFragment extends Fragment {
 
         lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
                 plant.getLastWateredTimeMillis(), viewModel.getCurrentServerTime()));
-        
-        boolean isOnline = plant.isOnline();
+
+        long serverTime = viewModel.getCurrentServerTime();
+        boolean isOnline = plant.isOnline(serverTime);
         if (isOnline) {
             connectionStatusText.setText("Online");
             connectionStatusText.setTextColor(android.graphics.Color.parseColor("#2E7D32"));

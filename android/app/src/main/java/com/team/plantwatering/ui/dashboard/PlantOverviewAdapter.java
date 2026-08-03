@@ -147,7 +147,7 @@ public class PlantOverviewAdapter extends RecyclerView.Adapter<RecyclerView.View
             PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
 
             if (connectivityStatus != null) {
-                boolean online = plant.isOnline();
+                boolean online = plant.isOnline(currentServerTime);
                 connectivityStatus.setText(online ? "Online" : "Offline");
                 connectivityStatus.setTextColor(online ? Color.parseColor("#2E7D32") : Color.parseColor("#C62828"));
             }

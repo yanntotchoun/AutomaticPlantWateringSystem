@@ -199,7 +199,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             if (isExpanded) {
                 PlantViewBinder.bindWaterTank(bucket, waterTankPercent, plant.getWaterTank());
-                PlantViewBinder.bindConnectionStatus(connectionStatus, plant);
+                PlantViewBinder.bindConnectionStatus(connectionStatus, plant, currentServerTime);
             }
 
             toggleButton.setOnClickListener(v -> {

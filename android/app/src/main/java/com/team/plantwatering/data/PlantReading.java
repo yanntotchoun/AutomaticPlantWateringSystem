@@ -101,8 +101,12 @@ public class PlantReading implements Parcelable {
     }
 
     public boolean isOnline() {
-        // Use 10-minute threshold (600 000ms) relative to local time, fix using local time instead of server-synced due to bug
-        return (System.currentTimeMillis() - lastSeenMillis) < 600_000L;
+        return isOnline(System.currentTimeMillis());
+    }
+
+    public boolean isOnline(long currentTimeMillis) {
+        // Use 10-minute threshold (600 000ms)
+        return (currentTimeMillis - lastSeenMillis) < 600_000L;
     }
 
     public boolean isManualWateringCommand() {
