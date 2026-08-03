@@ -29,6 +29,7 @@ const long gmtOffset=-18000; //-5 hours offset for EST from GMT, from seconds
 const int daylightOffset=3600;
 
 
+
 // input network credentials
 const char* ssid = "AD"; 
 const char* password = "William@2750";
@@ -65,21 +66,25 @@ struct hardwarePackage {
   int moisture_threshold; // Moisture threshold set by the app, originally initialized to 40
   bool taken; // State of the hardware package (Is there a plant there)
   String name; // Name of the plant. Set to NULL if there taken = 0
+  bool manual_watering;
+  int manual_duration;
+  volatile bool manual_watering_serviced;
 };
 
+int moisturePercentage_A;
+int moisturePercentage_B;
+
 // Initializing plant bundle structures
-hardwarePackage bundle1 = {moisture_sensor_A, water_pump_A, flow_sensor_A, 40, false, ""};
-hardwarePackage bundle2 = {moisture_sensor_B, water_pump_B, flow_sensor_B, 20, false, ""};
+hardwarePackage bundle1 = {moisture_sensor_A, water_pump_A, flow_sensor_A, 40, false, "", true, 0, true};
+hardwarePackage bundle2 = {moisture_sensor_B, water_pump_B, flow_sensor_B, 20, false, "", true, 0, true};
 
 // Intialization of time tracking variables
 unsigned long lastSendTime = 0;
 const unsigned long sendInterval = 20000; // one minute interval, reduce for testing
 
-// Variables to ensure consistent operation of the water pump
-int current_pump_state = 0; // 1 for testing
-int previous_pump_state = 0;
-int automatic_pump_time = 3000;
-int manual_pump_time = 0;
+const int automatic_pump_time = 3;
+const unsigned long pump_cooldown = 60000;
+unsigned long last_pump_time = 0;
 
 // Variables to track water flow through the pump
 double flow_rate = 0.0;
@@ -96,6 +101,7 @@ void IRAM_ATTR flow_rate_ISR() {
 // State variable for the status of database upload and requests
 volatile bool upload_complete = true;
 volatile bool watering_requested = false;
+volatile bool manual_watering_done = true;
 
 void ConnectedToAP_Handler(WiFiEvent_t wifi_event, WiFiEventInfo_t wifi_info) {
   Serial.println("Connected To The WiFi Network");
@@ -129,7 +135,7 @@ int getMoisture(int moisture_sensor_pin) {
   return moisturePercentage;
 }
 
-String getWaterTankState(int float_sensor_pin){
+String getWaterTankState(int float_sensor_pin) {
   int refillState = digitalRead(float_sensor_pin); // Reading float water sensor state
   String messageWater;
   if (refillState == 1) { // When input is HIGH -> bulb is lifted -> Water is sufficent
@@ -142,6 +148,14 @@ String getWaterTankState(int float_sensor_pin){
   }
 
   return messageWater;
+}
+
+void activatePump(int pump_pin, int duration) {
+  Serial.println("Activating pump: ");
+  digitalWrite(pump_pin, HIGH);
+  delay(duration*1000);
+  digitalWrite(pump_pin, LOW);
+  Serial.println("Closing pump");
 }
 
 void setup() {
@@ -244,7 +258,7 @@ void loop() {
         if (data["taken"] == 0) {
 
           if (bundle1.taken && bundle2.taken) {
-            Serial.println("Both hardware slots taken");
+            Serial.println("Both hardware slots taken. Cannot assign plant");
           }
 
           // First condition checks if bundle1 isn't taken and then checks if the plant is not already registered in bundle2
@@ -252,7 +266,14 @@ void loop() {
 
             app.loop();
             // Set the taken state in the database to TRUE
-            Database.set<bool>(aClient, "/plants/" + name + "/taken", 1, processData, "RTDB_Assigning " + name + " to bundle1");
+            Database.set<bool>(aClient, "/plants/" + name + "/taken", 1, processData, "RTDB_Assigning_Plant");
+            while (!upload_complete){
+              app.loop();
+              delay(10);
+            }
+            upload_complete = false;
+            bundle1.taken = true;
+            bundle1.name = name;
 
           }
 
@@ -260,16 +281,31 @@ void loop() {
             
             app.loop();
             // Set the taken state in the database to TRUE
-            Database.set<bool>(aClient, "/plants/" + name + "/taken", 1, processData, "RTDB_Assigning " + name + " to bundle1");
+            Database.set<bool>(aClient, "/plants/" + name + "/taken", 1, processData, "RTDB_Assigning_Plant");
+            while (!upload_complete){
+              app.loop();
+              delay(10);
+            }
+            upload_complete = false;
+            bundle2.taken = true;
+            bundle2.name = name;
           }
         }
 
         // Set the moisture threshold to the appropriate plant
         if (name == bundle1.name){
           bundle1.moisture_threshold = data["threshold"];
+          if (data["auto_watering_mode"] != true) {
+            bundle1.manual_watering = true;
+            bundle1.manual_duration = data["manual_watering_duration"];
+          }
         }
         else if (name == bundle2.name){
           bundle2.moisture_threshold = data["threshold"];
+          if (data["auto_watering_mode"] != true) {
+            bundle1.manual_watering = true;
+            bundle1.manual_duration = data["manual_watering_duration"];
+          }
         }
 
       }
@@ -280,18 +316,38 @@ void loop() {
   if (!getLocalTime(&timeInfo)){
     Serial.println("Failed to procure time");
   }
-
-
-  int moisturePercentage = getMoisture(moisture_sensor_A);
-
   char timeWateredChar[30];
   String timeWatered;
+
+  if (bundle1.taken) {
+    moisturePercentage_A = getMoisture(bundle1.moisture_sens);
+
+    if (!bundle1.manual_watering_serviced){
+      bundle1.manual_watering = false;
+    }
+    else if (bundle1.manual_watering) {
+      activatePump(bundle1.pump, bundle1.manual_duration);
+      bundle1.manual_watering = false;
+      bundle1.manual_watering_serviced = false;
+      
+      app.loop();
+      if (app.ready()) {
+        Database.set<bool>(aClient, "/plants/" + bundle1.name + "/auto_watering_mode", true, processData, "RTDB_Confirming_Manual_Watering_Bundle1");
+      }
+
+      strftime(timeWateredChar,sizeof(timeWateredChar), "%A, %B %d %H:%M:%S", &timeInfo);
+      timeWatered=String(timeWateredChar);
+    }
+    else if (!bundle1.manual_watering && moisturePercentage_A <= bundle1.moisture_threshold) {
+      activatePump(bundle1.pump, automatic_pump_time);
+
+      strftime(timeWateredChar,sizeof(timeWateredChar), "%A, %B %d %H:%M:%S", &timeInfo);
+      timeWatered=String(timeWateredChar);
+    }
+
+  }  
+
   String messageWater = getWaterTankState(water_sensor);
-
-
-  strftime(timeWateredChar,sizeof(timeWateredChar), "%A, %B %d %H:%M:%S", &timeInfo);
-
-  timeWatered=String(timeWateredChar);
 
 
   app.loop();
@@ -306,7 +362,7 @@ void loop() {
       Database.set<int>(aClient,"/plants/plant1/water_pump_A_state", 0, processData, "RTDB_Send_WaterPump_State"); // FOR TESTING
 
       // Send moisture level
-      Database.set<int>(aClient, "/plants/plant1/moisture_level", moisturePercentage, processData, "RTDB_Send_MoistureLevel");
+      Database.set<int>(aClient, "/plants/plant1/moisture_level", moisturePercentage_A, processData, "RTDB_Send_MoistureLevel");
 
       // Send water tank state
       Database.set<String>(aClient, "/plants/plant1/water_level", messageWater, processData, "RTDB_Send_WaterLevel");
@@ -320,7 +376,7 @@ void loop() {
     Serial.println("Database is not ready to receive data from hardware");
   }
 
-  if (app.ready()) {
+  /**if (app.ready()) {
     app.loop();
     String event = Database.get<String>(aClient,"/plants/plant1/latest_watering_status/event");
     bool is_completed = Database.get<bool>(aClient, "/plants/plant1/latest_watering_status/is_completed");
@@ -343,7 +399,7 @@ void loop() {
       app.loop();
       Database.set<bool>(aClient, "/plants/plant1/latest_watering_status/is_completed", true, processData, "RTDB_ManualWateringLog_Update");
       Database.set<String>(aClient, "/plants/plant1/watering_log/time", timeWatered, processData,"RTDB_Send_wateringTime");
-      Database.set<String>(aClient, "/plants1/plant1/watering_log/type", "Manual", processData);
+      Database.set<String>(aClient, "/plants/plant1/watering_log/type", "Manual", processData);
       Serial.println("MANUAL WATERING ACCOMPLISHED");
     }
     else if (watering_mode && needs_water == "NEEDS WATER") {
@@ -355,10 +411,10 @@ void loop() {
     
       app.loop();
       Database.set<String>(aClient, "/plants/plant1/watering_log/time", timeWatered, processData,"RTDB_Send_wateringTime");
-      Database.set<String>(aClient, "/plants1/plant1/watering_log/type", "Automatic", processData);
+      Database.set<String>(aClient, "/plants/plant1/watering_log/type", "Automatic", processData);
       Serial.println("AUTO-WATERING FINISHED");
     }
-  }
+  } **/
 
 
   
@@ -406,8 +462,7 @@ void loop() {
 
   }**/
 
-  // Update the previous water pump state for next loop iteration
-  previous_pump_state = current_pump_state; 
+
   pulse_count = 0;
 
   delay(5000); // Delay for two seconds before the next reading
@@ -422,8 +477,11 @@ void processData(AsyncResult &result) {
 
   if (result.isError()) {
     Firebase.printf("Upload failed: %s\n", result.error().message().c_str());
-    if (result.uid() == "RTDB_Send_DispensedWater_Volume" || result.uid() == "RTDB_Send_Dispensed_Flow_Rate") {
+    if (result.uid() == "RTDB_Send_DispensedWater_Volume" || result.uid() == "RTDB_Send_Dispensed_Flow_Rate" || result.uid() == "RTDB_Assigning_Plant") {
       upload_complete = true;
+    }
+    if (result.uid() == "RTDB_Confirming_Manual_Watering_Bundle1") {
+      bundle1.manual_watering_serviced = true;
     }
     return;
   }  
@@ -431,37 +489,13 @@ void processData(AsyncResult &result) {
   if (result.available()) {
     Firebase.printf("Upload successful: %s\n", result.uid().c_str());
     // Water flow and volume data case interrupt CPU and must be have their condition variable flipped when completed
-    if (result.uid() == "RTDB_Send_DispensedWater_Volume" || result.uid() == "RTDB_Send_Dispensed_Flow_Rate") {
+    if (result.uid() == "RTDB_Send_DispensedWater_Volume" || result.uid() == "RTDB_Send_Dispensed_Flow_Rate" || result.uid() == "RTDB_Assigning_Plant") {
       upload_complete = true;
+    }
+    if (result.uid() == "RTDB_Confirming_Manual_Watering_Bundle1") {
+      bundle1.manual_watering_serviced = true;
     }
   }
     
 }
 
-/**void processCommand(AsyncResult &result) {
-  if (!result.isResult())
-    return;
-
-  if (result.isError()) {
-    Serial.println(result.error().message());
-    return;
-  }
-
-  if (result.available()) {
-    RealtimeDatabaseResult &command = result.to<RealtimeDatabaseResult>();
-
-    Serial.println(command.event());
-    Serial.println(command.dataPath());
-    Serial.println(command.to<const char *>());
-
-    JsonDocument doc;
-    deserializeJson(doc, command.to<const char *>());
-    String event = doc["event"];
-    if (event == "Manual watering requested") {
-      if (!watering_requested) {
-        manual_pump_time = doc["duration"];
-        watering_requested = true;
-      }
-    }
-  }
-} **/
