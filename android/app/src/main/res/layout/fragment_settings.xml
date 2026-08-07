@@ -125,12 +125,15 @@
                     android:layout_marginTop="8dp"
                     android:hint="@string/profile_name_hint"
                     android:visibility="gone"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="15"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_profile_name"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:maxLength="15"
                         android:inputType="text" />
                 </com.google.android.material.textfield.TextInputLayout>
 

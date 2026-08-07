@@ -319,12 +319,6 @@ public class PlantViewModel extends ViewModel {
                                             .child("last_time")
                                             .getValue(String.class);
 
-                            // Plant image URL stored in Firebase.
-                            String imageUrl =
-                                    plantSnapshot
-                                            .child("image_url")
-                                            .getValue(String.class);
-
                             String thresholdProfileId =
                                     plantSnapshot
                                             .child("threshold_profile")
@@ -391,40 +385,17 @@ public class PlantViewModel extends ViewModel {
                                     takenInt != null
                                             && takenInt == 1;
 
-                    // New: Read explicit sensor_index attribute
-                    Object sensorIndexObj = plantSnapshot.child("sensor_index").getValue();
-                    Integer sensorIndexInt = parseSafeInt(sensorIndexObj);
-                    int sensorIndex = (sensorIndexInt != null) ? sensorIndexInt : (key.contains("slot2") ? 2 : 1);
+                            // New: Read explicit sensor_index attribute
+                            Object sensorIndexObj = plantSnapshot.child("sensor_index").getValue();
+                            Integer sensorIndexInt = parseSafeInt(sensorIndexObj);
+                            int sensorIndex = (sensorIndexInt != null) ? sensorIndexInt : (key.contains("slot2") ? 2 : 1);
 
-                    int h = (moisture != null) ? moisture : 0;
-                    // Ensure moisture stays within 0-100% range
-                    if (h > 100) h = 100;
-                    if (h < 0) h = 0;
-                            int h =
-                                    moisture != null
-                                            ? moisture
-                                            : 0;
+                            String imageUrl = plantSnapshot.child("image_url").getValue(String.class);
 
-                            // Ensure moisture stays within
-                            // 0-100% range.
-                            if (h > 100) {
-                                h = 100;
-                            }
-
-                    // Pass all data including new sensorIndex
-                    updatedPlants.add(new PlantReading(key, name, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken, sensorIndex));
-                }
-                Log.d(
-                        TAG,
-                        "Plants successfully converted for the UI: "
-                                + updatedPlants.size()
-                );
-                plantsLiveData.setValue(updatedPlants);
-                updatePlantNamesNode(updatedPlants);
-            }
-                            if (h < 0) {
-                                h = 0;
-                            }
+                            int h = (moisture != null) ? moisture : 0;
+                            // Ensure moisture stays within 0-100% range
+                            if (h > 100) h = 100;
+                            if (h < 0) h = 0;
 
                             // Water message from ESP
                             // e.g. "Sufficient", "Low", "Connecting..."
@@ -463,9 +434,6 @@ public class PlantViewModel extends ViewModel {
                             /*
                              * key (slot id, e.g. "slot1") is used
                              * internally for database operations.
-                             *
-                             * The image URL is now also passed
-                             * into PlantReading.
                              */
                             updatedPlants.add(
                                     new PlantReading(
@@ -482,6 +450,7 @@ public class PlantViewModel extends ViewModel {
                                             ipa,
                                             ac,
                                             isTaken,
+                                            sensorIndex,
                                             imageUrl
                                     )
                             );
@@ -855,12 +824,6 @@ public class PlantViewModel extends ViewModel {
         DatabaseReference plantRef =
                 databaseReference.child(selectedSlot);
 
-        // Mark as taken for hardware slot logic
-        plantRef.child("taken").setValue(1);
-
-        // Explicitly set sensor index attribute as requested
-        int sensorIndex = slotId.contains("slot2") ? 2 : 1;
-        plantRef.child("sensor_index").setValue(sensorIndex);
         // Re-check the slot immediately before writing so we do not
         // accidentally claim a slot that became occupied meanwhile.
         plantRef.get()
@@ -885,6 +848,10 @@ public class PlantViewModel extends ViewModel {
                     values.put("moisture_level", 0);
                     values.put("water_level", "Unknown");
                     values.put("taken", 1);
+                    
+                    int sensorIndex = selectedSlot.contains("slot2") ? 2 : 1;
+                    values.put("sensor_index", sensorIndex);
+
                     values.put(
                             "last_time",
                             firmwareDateFormat.format(new Date())
@@ -960,21 +927,6 @@ public class PlantViewModel extends ViewModel {
     }
 
     /**
-     * Saves or replaces the Cloudinary image URL
-     * for an existing plant.
-     */
-    public void updatePlantImage(
-            String plantId,
-            String imageUrl
-    ) {
-
-        databaseReference
-                .child(plantId)
-                .child("image_url")
-                .setValue(imageUrl);
-    }
-
-    /**
      * Resets a hardware slot by marking it as not taken.
      * This "leaves the space open" in the database for the next plant.
      */
@@ -991,13 +943,10 @@ public class PlantViewModel extends ViewModel {
 
         // Reset manual commands
         plantRef.child("water_pump_state").setValue(false);
-    public void deletePlant(
-            String plantId
-    ) {
+    }
 
-        databaseReference
-                .child(plantId)
-                .removeValue();
+    public void updatePlantImage(String plantId, String imageUrl) {
+        databaseReference.child(plantId).child("image_url").setValue(imageUrl);
     }
 
     public void activateConnectionPortal() {

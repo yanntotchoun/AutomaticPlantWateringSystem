@@ -127,8 +127,9 @@ public class PlantMonitoringService extends Service {
                     // 2. Tank Check
                     String waterStr = plantSnapshot.child("water_level").getValue(String.class);
                     if (settingsManager.isLowTankAlertsEnabled() && waterStr != null) {
-                        PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(profileId != null ? profileId : "standard");
-                        if (waterStr.contains(profile.fullTank)) {
+                        // The ESP32 sends "Low" or "Empty" when water is needed.
+                        // "Sufficient" or "Full" means it's okay.
+                        if (waterStr.equalsIgnoreCase("Low") || waterStr.equalsIgnoreCase("Empty")) {
                             sendInstantNotification(plantId.hashCode() + 2,
                                 "Low Water Tank: " + plantName,
                                 "The water tank needs a refill.",

@@ -235,6 +235,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final LinearLayout dropletContainer;
         private final TextView humidityPercent;
         private final TextView lastSeen;
+        private final TextView lastWatered;
         private final View toggleButton;
         private final View expandableSection;
         private final ImageView bucket;
@@ -276,6 +277,11 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                             R.id.text_humidity_percent
                     );
 
+            lastSeen =
+                    itemView.findViewById(
+                            R.id.text_last_watered
+                    );
+
             lastWatered =
                     itemView.findViewById(
                             R.id.text_last_watered
@@ -306,24 +312,20 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                             R.id.text_connection_status
                     );
 
+            hardwareSlot =
+                    itemView.findViewById(
+                            R.id.text_hardware_slot
+                    );
+
+            hardwareSlotExpanded =
+                    itemView.findViewById(
+                            R.id.text_hardware_slot_expanded
+                    );
+
             settingsManager =
                     new PlantSettingsManager(
                             itemView.getContext()
                     );
-            avatar = itemView.findViewById(R.id.text_avatar);
-            plantName = itemView.findViewById(R.id.text_plant_name);
-            hardwareSlot = itemView.findViewById(R.id.text_hardware_slot);
-            hardwareSlotExpanded = itemView.findViewById(R.id.text_hardware_slot_expanded);
-            statusChip = itemView.findViewById(R.id.chip_status);
-            dropletContainer = itemView.findViewById(R.id.droplet_container);
-            humidityPercent = itemView.findViewById(R.id.text_humidity_percent);
-            lastSeen = itemView.findViewById(R.id.text_last_watered);
-            toggleButton = itemView.findViewById(R.id.button_toggle_expand);
-            expandableSection = itemView.findViewById(R.id.expandable_section);
-            bucket = itemView.findViewById(R.id.image_bucket);
-            waterTankPercent = itemView.findViewById(R.id.text_water_tank_percent);
-            connectionStatus = itemView.findViewById(R.id.text_connection_status);
-            settingsManager = new PlantSettingsManager(itemView.getContext());
         }
 
         void bind(

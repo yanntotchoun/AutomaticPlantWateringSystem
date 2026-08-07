@@ -40,8 +40,7 @@ public class PlantReading implements Parcelable {
             boolean isPumpActive,
             boolean autoWateringEnabled,
             boolean isTaken,
-            int sensorIndex
-            boolean isTaken,
+            int sensorIndex,
             String imageUrl
     ) {
         this.identifier = identifier;
@@ -180,7 +179,7 @@ public class PlantReading implements Parcelable {
         dest.writeByte((byte) (isPumpActive ? 1 : 0));
         dest.writeByte((byte) (autoWateringEnabled ? 1 : 0));
         dest.writeByte((byte) (isTaken ? 1 : 0));
-        dest.writeString(imageUrl);
         dest.writeInt(sensorIndex);
+        dest.writeString(imageUrl);
     }
 }

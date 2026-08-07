@@ -48,6 +48,10 @@ public final class DashboardUtils {
                 new Date(timestampMillis)
         );
     }
+    public static String formatRelativeLastWateredTime(long timeMillis, long currentTimeMillis) {
+        return formatRelativeTime(timeMillis, currentTimeMillis);
+    }
+
     public static String formatRelativeTime(long timeMillis, long currentTimeMillis) {
         // Make sure elapsed time never becomes negative, even if the device clock changes.
         long elapsedMillis = Math.max(currentTimeMillis - timeMillis, 0L);
