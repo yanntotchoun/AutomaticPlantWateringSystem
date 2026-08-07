@@ -450,6 +450,7 @@ public class PlantViewModel extends ViewModel {
                             updatedPlants.add(
                                     new PlantReading(
                                             key,
+                                            name,
                                             h,
                                             w,
                                             lw,
@@ -819,77 +820,77 @@ public class PlantViewModel extends ViewModel {
 
     public void addPlant(
             String plantName,
+            String selectedSlot,
             PlantSettingsManager.ThresholdProfile profile,
             AddPlantCallback callback
     ) {
 
-        // Use plant name (sanitized) as the key directly.
-        String plantId =
-                plantName
-                        .replaceAll(
-                                "[^a-zA-Z0-9]",
-                                "_"
-                        )
-                        .toLowerCase();
+        if (selectedSlot == null || selectedSlot.trim().isEmpty()) {
+            if (callback != null) {
+                callback.onError("No hardware slot is available.");
+            }
+            return;
+        }
 
         DatabaseReference plantRef =
-                databaseReference.child(plantId);
+                databaseReference.child(selectedSlot);
 
-        plantRef
-                .child("name")
-                .setValue(plantName);
+        // Re-check the slot immediately before writing so we do not
+        // accidentally claim a slot that became occupied meanwhile.
+        plantRef.get()
+                .addOnSuccessListener(snapshot -> {
+                    Integer taken = parseSafeInt(
+                            snapshot.child("taken").getValue()
+                    );
 
-        plantRef
-                .child("moisture_level")
-                .setValue(0);
+                    if (taken != null && taken == 1) {
+                        if (callback != null) {
+                            callback.onError(
+                                    "That hardware slot is already occupied. Please try again."
+                            );
+                        }
+                        return;
+                    }
 
-        plantRef
-                .child("water_level")
-                .setValue("Unknown");
+                    java.util.Map<String, Object> values =
+                            new java.util.HashMap<>();
 
-        // Mark as taken for hardware slot logic.
-        plantRef
-                .child("taken")
-                .setValue(1);
+                    values.put("name", plantName);
+                    values.put("moisture_level", 0);
+                    values.put("water_level", "Unknown");
+                    values.put("taken", 1);
+                    values.put(
+                            "last_time",
+                            firmwareDateFormat.format(new Date())
+                    );
+                    values.put("threshold_profile", profile.id);
+                    values.put("threshold", profile.drySoil);
+                    values.put("water_pump_state", false);
+                    values.put("manual_watering_duration", 3);
+                    values.put("auto_watering_mode", true);
+                    values.put("watering_log/placeholder", 0);
 
-        String nowStr =
-                firmwareDateFormat.format(
-                        new Date()
-                );
-
-        plantRef
-                .child("last_time")
-                .setValue(nowStr);
-
-        plantRef
-                .child("threshold_profile")
-                .setValue(profile.id);
-
-        plantRef
-                .child("threshold")
-                .setValue(profile.drySoil);
-
-        // Initialize Manual Watering Fields
-        plantRef
-                .child("water_pump_state")
-                .setValue(false);
-
-        plantRef
-                .child("manual_watering_duration")
-                .setValue(3);
-
-        plantRef
-                .child("auto_watering_mode")
-                .setValue(true);
-
-        plantRef
-                .child("watering_log")
-                .child("placeholder")
-                .setValue(0);
-
-        if (callback != null) {
-            callback.onSuccess(plantId);
-        }
+                    plantRef.updateChildren(values)
+                            .addOnSuccessListener(unused -> {
+                                if (callback != null) {
+                                    callback.onSuccess(selectedSlot);
+                                }
+                            })
+                            .addOnFailureListener(error -> {
+                                if (callback != null) {
+                                    callback.onError(
+                                            "Could not add plant: " + error.getMessage()
+                                    );
+                                }
+                            });
+                })
+                .addOnFailureListener(error -> {
+                    if (callback != null) {
+                        callback.onError(
+                                "Could not check hardware slot: " + error.getMessage()
+                        );
+                    }
+                });
     }
 
     public void requestManualWatering(

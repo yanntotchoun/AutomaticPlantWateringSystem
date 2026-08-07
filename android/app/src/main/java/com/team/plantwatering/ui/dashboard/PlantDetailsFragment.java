@@ -269,7 +269,7 @@ public class PlantDetailsFragment extends Fragment {
                     if (buttonView.isPressed()) {
 
                         viewModel.setAutoWateringMode(
-                                plant.getPlantName(),
+                                plant.getIdentifier(),
                                 isChecked
                         );
 
@@ -356,9 +356,9 @@ public class PlantDetailsFragment extends Fragment {
                             ) {
 
                                 if (
-                                        p.getPlantName()
+                                        p.getIdentifier()
                                                 .equals(
-                                                        plant.getPlantName()
+                                                        plant.getIdentifier()
                                                 )
                                 ) {
 
@@ -384,7 +384,7 @@ public class PlantDetailsFragment extends Fragment {
                 );
 
         viewModel.startListeningForWateringLog(
-                plant.getPlantName()
+                plant.getIdentifier()
         );
 
         startPeriodicRefreshLoop();
@@ -407,7 +407,7 @@ public class PlantDetailsFragment extends Fragment {
                 v -> {
 
                     viewModel.requestManualWatering(
-                            plant.getPlantName(),
+                            plant.getIdentifier(),
                             3
                     );
 
@@ -441,7 +441,7 @@ public class PlantDetailsFragment extends Fragment {
                             );
 
                     viewModel.requestManualWatering(
-                            plant.getPlantName(),
+                            plant.getIdentifier(),
                             duration
                     );
 
@@ -459,7 +459,7 @@ public class PlantDetailsFragment extends Fragment {
 
         stopWateringButton.setOnClickListener(
                 v -> viewModel.stopManualWatering(
-                        plant.getPlantName()
+                        plant.getIdentifier()
                 )
         );
 
@@ -543,7 +543,7 @@ public class PlantDetailsFragment extends Fragment {
                                              * /plants/{plantId}/image_url
                                              */
                                             viewModel.updatePlantImage(
-                                                    plant.getPlantName(),
+                                                    plant.getIdentifier(),
                                                     imageUrl
                                             );
 
@@ -1170,7 +1170,7 @@ public class PlantDetailsFragment extends Fragment {
                                     );
 
                             viewModel.updatePlantThreshold(
-                                    plant.getPlantName(),
+                                    plant.getIdentifier(),
                                     selected
                             );
                         }
@@ -1196,7 +1196,7 @@ public class PlantDetailsFragment extends Fragment {
                         (dialog, which) -> {
 
                             viewModel.deletePlant(
-                                    plant.getPlantName()
+                                    plant.getIdentifier()
                             );
 
                             getParentFragmentManager()
