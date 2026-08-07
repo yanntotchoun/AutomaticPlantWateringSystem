@@ -103,7 +103,7 @@ public class PlantDetailsFragment extends Fragment {
 
         autoWateringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (buttonView.isPressed()) {
-                viewModel.setAutoWateringMode(plant.getPlantName(), isChecked);
+                viewModel.setAutoWateringMode(plant.getIdentifier(), isChecked);
                 if (!plant.isOnline(viewModel.getCurrentServerTime())) {
                     showOfflinePendingToast();
                 }
@@ -125,7 +125,7 @@ public class PlantDetailsFragment extends Fragment {
 
         viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
             for (PlantReading p : plants) {
-                if (p.getPlantName().equals(plant.getPlantName())) {
+                if (p.getIdentifier().equals(plant.getIdentifier())) {
                     this.plant = p;
                     updateUi();
                     break;
@@ -139,7 +139,7 @@ public class PlantDetailsFragment extends Fragment {
         );
 
         viewModel.startListeningForWateringLog(
-                plant.getPlantName()
+                plant.getIdentifier()
         );
 
 
@@ -148,7 +148,7 @@ public class PlantDetailsFragment extends Fragment {
         view.findViewById(R.id.button_change_profile).setOnClickListener(v -> showProfileSelector());
 
         quickRefreshButton.setOnClickListener(v -> {
-            viewModel.requestManualWatering(plant.getPlantName(), 3);
+            viewModel.requestManualWatering(plant.getIdentifier(), 3);
             if (!plant.isOnline(viewModel.getCurrentServerTime())) {
                 showOfflinePendingToast();
             }
@@ -156,13 +156,13 @@ public class PlantDetailsFragment extends Fragment {
         
         waterNowButton.setOnClickListener(v -> { //This is the custom button that allows the user to choose how long they want to water the plant.
             int duration = MIN_DURATION + ((durationBar.getProgress() / STEP) * STEP);
-            viewModel.requestManualWatering(plant.getPlantName(), duration);
+            viewModel.requestManualWatering(plant.getIdentifier(), duration);
             if (!plant.isOnline(viewModel.getCurrentServerTime())) {
                 showOfflinePendingToast();
             }
         });
 
-        stopWateringButton.setOnClickListener(v -> viewModel.stopManualWatering(plant.getPlantName()));
+        stopWateringButton.setOnClickListener(v -> viewModel.stopManualWatering(plant.getIdentifier()));
 
         view.findViewById(R.id.button_delete_plant).setOnClickListener(v -> showDeleteConfirmation()); // I added a delete plant button for the user. This removes the data from the firebase in real time also.
 
@@ -361,7 +361,7 @@ public class PlantDetailsFragment extends Fragment {
                 .setTitle("Select Threshold Profile")
                 .setItems(names, (dialog, which) -> {
                     PlantSettingsManager.ThresholdProfile selected = profiles.get(which);
-                    viewModel.updatePlantThreshold(plant.getPlantName(), selected);
+                    viewModel.updatePlantThreshold(plant.getIdentifier(), selected);
                 })
                 .show();
     }
@@ -371,7 +371,7 @@ public class PlantDetailsFragment extends Fragment {
                 .setTitle("Delete Plant")
                 .setMessage("Are you sure you want to delete '" + plant.getPlantName() + "'? This action cannot be undone.")
                 .setPositiveButton("Delete", (dialog, which) -> {
-                    viewModel.deletePlant(plant.getPlantName());
+                    viewModel.deletePlant(plant.getIdentifier());
                     getParentFragmentManager().popBackStack();
                 })
                 .setNegativeButton("Cancel", null)

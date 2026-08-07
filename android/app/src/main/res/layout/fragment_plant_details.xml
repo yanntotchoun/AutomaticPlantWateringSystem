@@ -326,7 +326,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:max="55"
+                        android:max="60"
                         android:progress="0"/>
 
                     <com.google.android.material.button.MaterialButton

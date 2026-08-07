@@ -150,6 +150,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
     static class PlantViewHolder extends RecyclerView.ViewHolder {
         private final TextView avatar;
         private final TextView plantName;
+        private final TextView hardwareSlot;
         private final TextView statusChip;
         private final LinearLayout dropletContainer;
         private final TextView humidityPercent;
@@ -165,6 +166,7 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             super(itemView);
             avatar = itemView.findViewById(R.id.text_avatar);
             plantName = itemView.findViewById(R.id.text_plant_name);
+            hardwareSlot = itemView.findViewById(R.id.text_hardware_slot);
             statusChip = itemView.findViewById(R.id.chip_status);
             dropletContainer = itemView.findViewById(R.id.droplet_container);
             humidityPercent = itemView.findViewById(R.id.text_humidity_percent);
@@ -183,6 +185,20 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             PlantViewBinder.bindAvatar(avatar, plant.getPlantName());
             plantName.setText(plant.getPlantName());
+            
+            // Show hardware slot association
+            // The identifier (Firebase key) is "slot1" or "slot2"
+            String slotId = plant.getIdentifier().toLowerCase();
+            if (slotId.contains("slot1")) {
+                hardwareSlot.setText("Soil Moisture Sensor 1");
+                hardwareSlot.setVisibility(View.VISIBLE);
+            } else if (slotId.contains("slot2")) {
+                hardwareSlot.setText("Soil Moisture Sensor 2");
+                hardwareSlot.setVisibility(View.VISIBLE);
+            } else {
+                hardwareSlot.setVisibility(View.GONE);
+            }
+
             PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
             PlantViewBinder.bindDropletBar(dropletContainer, plant.getSoilHumidity());
 

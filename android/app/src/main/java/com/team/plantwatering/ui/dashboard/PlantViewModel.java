@@ -44,8 +44,6 @@ public class PlantViewModel extends ViewModel {
     private String lastNamesList = null;
 
     public PlantViewModel() {
-        // Fixed device slots (slot1, slot2, slot3...) live directly under "plants" -
-        // they're pre-provisioned by the hardware team, not generated dynamically by the app.
         databaseReference = FirebaseDatabase.getInstance().getReference("plants");
 
         listenForServerTimeOffset();
@@ -238,11 +236,8 @@ public class PlantViewModel extends ViewModel {
                     String sm = (mode != null) ? mode : "Auto";
                     boolean ipa = (isPumpActive != null && isPumpActive);
 
-                    // Note: key (slot id, e.g. "slot1") is used internally for all database
-                    // operations; name is only for display. PlantReading stores the slot id as
-                    // its identifying "name" field so requestManualWatering/deletePlant/etc
-                    // keep working unchanged.
-                    updatedPlants.add(new PlantReading(key, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken));
+                    // Pass both key (identifier) and name (display)
+                    updatedPlants.add(new PlantReading(key, name, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken));
                 }
                 Log.d(
                         TAG,
@@ -410,13 +405,11 @@ public class PlantViewModel extends ViewModel {
      */
     public interface AddPlantCallback {
         void onSuccess(String plantId);
+        void onError(String message);
     }
 
-    public void addPlant(String plantName, PlantSettingsManager.ThresholdProfile profile, AddPlantCallback callback) {
-        // Forgo slot implementation: Use plant name (sanitized) as the key directly
-        String plantId = plantName.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
-        
-        DatabaseReference plantRef = databaseReference.child(plantId);
+    public void addPlant(String plantName, String slotId, PlantSettingsManager.ThresholdProfile profile, AddPlantCallback callback) {
+        DatabaseReference plantRef = databaseReference.child(slotId);
 
         plantRef.child("name").setValue(plantName);
         plantRef.child("moisture_level").setValue(0);
@@ -441,7 +434,7 @@ public class PlantViewModel extends ViewModel {
                 .child("placeholder")
                 .setValue(0);
 
-        if (callback != null) callback.onSuccess(plantId);
+        if (callback != null) callback.onSuccess(slotId);
     }
 
     // Removed claimSlotAndFillPlant as it's no longer needed without slot/taken logic
@@ -466,5 +459,24 @@ public class PlantViewModel extends ViewModel {
      */
     public void deletePlant(String plantId) {
         databaseReference.child(plantId).removeValue();
+    }
+
+    public void activateConnectionPortal() {
+        DatabaseReference portalRef = FirebaseDatabase.getInstance().getReference("connection_portal");
+        portalRef.setValue(true);
+        
+        // Listen for when it's reset to false by the hardware
+        portalRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean val = snapshot.getValue(Boolean.class);
+                if (val != null && !val) {
+                    // Reset to false, we can stop listening
+                    portalRef.removeEventListener(this);
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
     }
 }

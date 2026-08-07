@@ -11,6 +11,8 @@ import android.widget.TextView;
 import android.text.Editable;
 import android.text.TextWatcher;
 
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -23,9 +25,11 @@ import com.team.plantwatering.data.PlantReading;
 
 public class AddPlantFragment extends Fragment {
     EditText name;
-    Button saveButton, cancelButton;
+    Button saveButton;
     TextView limitStatus;
     boolean isHardwareFull = false;
+    String selectedSlot = null;
+    java.util.List<String> existingNames = new java.util.ArrayList<>();
 
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
@@ -47,7 +51,6 @@ public class AddPlantFragment extends Fragment {
 
         name = view.findViewById(R.id.edit_plant_name);
         saveButton = view.findViewById(R.id.button_save_plant);
-        cancelButton = view.findViewById(R.id.button_cancel_add_plant);
         limitStatus = view.findViewById(R.id.text_slot_status); // Reusing the ID or adding a generic status
 
         View header = view.findViewById(R.id.header_root);
@@ -64,18 +67,40 @@ public class AddPlantFragment extends Fragment {
 
         // Slot availability observation
         viewModel.getPlants().observe(getViewLifecycleOwner(), plants -> {
-            int takenCount = 0;
+            boolean slot1Taken = false;
+            boolean slot2Taken = false;
+            existingNames.clear();
+
             for (PlantReading plant : plants) {
-                if (plant.isTaken()) takenCount++;
+                if (plant.isTaken()) {
+                    String identifier = plant.getIdentifier().toLowerCase();
+                    if (identifier.contains("slot1")) slot1Taken = true;
+                    else if (identifier.contains("slot2")) slot2Taken = true;
+                    
+                    existingNames.add(plant.getPlantName().toLowerCase().trim());
+                }
             }
 
-            isHardwareFull = (takenCount >= 2);
+            isHardwareFull = (slot1Taken && slot2Taken);
             
+            if (!slot1Taken) {
+                selectedSlot = "slot1";
+            } else if (!slot2Taken) {
+                selectedSlot = "slot2";
+            } else {
+                selectedSlot = null;
+            }
+
             if (limitStatus != null) {
                 if (isHardwareFull) {
                     limitStatus.setVisibility(View.VISIBLE);
                     limitStatus.setText(R.string.all_slots_occupied);
                     limitStatus.setTextColor(getResources().getColor(R.color.error_red, null));
+                } else if (selectedSlot != null) {
+                    limitStatus.setVisibility(View.VISIBLE);
+                    String slotDisplay = selectedSlot.equals("slot1") ? "Soil Moisture Sensor 1" : "Soil Moisture Sensor 2";
+                    limitStatus.setText("This plant will be assigned to " + slotDisplay);
+                    limitStatus.setTextColor(getResources().getColor(R.color.status_healthy_text, null));
                 } else {
                     limitStatus.setVisibility(View.GONE);
                 }
@@ -84,19 +109,31 @@ public class AddPlantFragment extends Fragment {
         });
 
         saveButton.setOnClickListener(v -> {
-            String plantName = name.getText().toString();
+            String plantName = name.getText().toString().trim();
             if (plantName.isEmpty()) {
                 name.setError("Please enter a name");
                 return;
             }
             
+            if (existingNames.contains(plantName.toLowerCase())) {
+                Toast.makeText(requireContext(), "A plant named '" + plantName + "' already exists.", Toast.LENGTH_SHORT).show();
+                name.setError("Name already taken");
+                return;
+            }
+
+            if (selectedSlot == null) {
+                return;
+            }
+
             saveButton.setEnabled(false);
             
             // Get the default "standard" profile to initialize thresholds
             PlantSettingsManager settingsManager = new PlantSettingsManager(requireContext());
             PlantSettingsManager.ThresholdProfile standardProfile = settingsManager.getThresholdProfile("standard");
             
-            viewModel.addPlant(plantName, standardProfile, plantId ->
+            viewModel.addPlant(plantName, selectedSlot, standardProfile, new PlantViewModel.AddPlantCallback() {
+                @Override
+                public void onSuccess(String plantId) {
                     requireActivity().runOnUiThread(() -> {
                         name.setText("");
                         saveButton.setEnabled(true);
@@ -107,10 +144,18 @@ public class AddPlantFragment extends Fragment {
                                 navView.findViewById(R.id.nav_dashboard).performClick();
                             }
                         }
-                    }));
-        });
+                    });
+                }
 
-        cancelButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
+                @Override
+                public void onError(String message) {
+                    requireActivity().runOnUiThread(() -> {
+                        saveButton.setEnabled(true);
+                        name.setError(message);
+                    });
+                }
+            });
+        });
     }
 
     private void updateSaveButtonState() {

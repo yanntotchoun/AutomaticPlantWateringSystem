@@ -173,13 +173,6 @@ public class PlantMonitoringService extends Service {
         Log.d(TAG, "Actually sending notification: " + title);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel alertsChannel = new NotificationChannel(
-                    ALERTS_CHANNEL_ID, "Plant Alerts", NotificationManager.IMPORTANCE_HIGH);
-            alertsChannel.enableVibration(true);
-            notificationManager.createNotificationChannel(alertsChannel);
-        }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, ALERTS_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -220,6 +213,7 @@ public class PlantMonitoringService extends Service {
             // Alerts channel
             NotificationChannel alertsChannel = new NotificationChannel(
                     ALERTS_CHANNEL_ID, "Plant Alerts", NotificationManager.IMPORTANCE_HIGH);
+            alertsChannel.enableVibration(true);
             manager.createNotificationChannel(alertsChannel);
         }
     }

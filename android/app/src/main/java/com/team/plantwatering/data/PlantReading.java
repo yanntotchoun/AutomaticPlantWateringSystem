@@ -5,7 +5,8 @@ import android.os.Parcelable;
 
 public class PlantReading implements Parcelable {
 
-    private final String plantName;
+    private final String identifier; // Firebase key (e.g. "slot1")
+    private final String plantName; // Display name
     private final int soilHumidity;
     private final String waterTank;
     private final long lastWateredTimeMillis;
@@ -22,6 +23,7 @@ public class PlantReading implements Parcelable {
     private final boolean isTaken;
 
     public PlantReading(
+            String identifier,
             String plantName,
             int soilHumidity,
             String waterTank,
@@ -35,6 +37,7 @@ public class PlantReading implements Parcelable {
             boolean autoWateringEnabled,
             boolean isTaken
     ) {
+        this.identifier = identifier;
         this.plantName = plantName;
         this.soilHumidity = soilHumidity;
         this.waterTank = waterTank;
@@ -50,6 +53,7 @@ public class PlantReading implements Parcelable {
     }
 
     protected PlantReading(Parcel in) {
+        identifier = in.readString();
         plantName = in.readString();
         soilHumidity = in.readInt();
         waterTank = in.readString();
@@ -75,6 +79,10 @@ public class PlantReading implements Parcelable {
             return new PlantReading[size];
         }
     };
+
+    public String getIdentifier() {
+        return identifier;
+    }
 
     public String getPlantName() {
         return plantName;
@@ -105,8 +113,8 @@ public class PlantReading implements Parcelable {
     }
 
     public boolean isOnline(long currentTimeMillis) {
-        // Use 10-minute threshold (600 000ms)
-        return (currentTimeMillis - lastSeenMillis) < 600_000L;
+
+        return (System.currentTimeMillis() - lastSeenMillis) < 600_000L;
     }
 
     public boolean isManualWateringCommand() {
@@ -140,6 +148,7 @@ public class PlantReading implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(identifier);
         dest.writeString(plantName);
         dest.writeInt(soilHumidity);
         dest.writeString(waterTank);

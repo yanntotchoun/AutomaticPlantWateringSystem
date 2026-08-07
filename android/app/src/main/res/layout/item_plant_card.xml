@@ -55,6 +55,15 @@
                     tools:text="Basil" />
 
                 <TextView
+                    android:id="@+id/text_hardware_slot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_gray_777"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="Hardware Slot 1" />
+
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/tap_card_to_open"

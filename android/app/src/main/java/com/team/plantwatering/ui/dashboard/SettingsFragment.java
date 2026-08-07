@@ -83,6 +83,7 @@ public class SettingsFragment extends BaseFragment {
         
         setUpNotifications(view, dropdown);
         setUpWateringReminders(view, dropdown);
+        setUpHardwareSetup(view);
 
         view.findViewById(R.id.button_back).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
@@ -400,6 +401,24 @@ public class SettingsFragment extends BaseFragment {
                 scheduleOrCancelReminder(selected);
             }
         });
+    }
+
+    private void setUpHardwareSetup(View view) {
+        View activateButton = view.findViewById(R.id.button_activate_portal);
+        if (activateButton != null) {
+            activateButton.setOnClickListener(v -> {
+                new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Change Wi-Fi Network?")
+                        .setMessage("This will force your device to disconnect and enter setup mode so you can update its Wi-Fi credentials.")
+                        .setPositiveButton("Start Setup", (dialog, which) -> {
+                            PlantViewModel viewModel = new ViewModelProvider(requireActivity()).get(PlantViewModel.class);
+                            viewModel.activateConnectionPortal();
+                            Toast.makeText(requireContext(), "Command sent. Device will enter Wi-Fi setup mode shortly.", Toast.LENGTH_LONG).show();
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            });
+        }
     }
 
     private void scheduleOrCancelReminder(String frequency) {
