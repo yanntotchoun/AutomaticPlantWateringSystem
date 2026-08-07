@@ -62,6 +62,15 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/text_hardware_slot"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_gray_777"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Soil Moisture Sensor 1" />
+
+                        <TextView
                             android:id="@+id/text_status_message"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -146,7 +155,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/last_watered"
+                        android:text="@string/last_seen_online"
                         android:textColor="@color/text_gray_555"
                         android:textSize="17sp" />
 

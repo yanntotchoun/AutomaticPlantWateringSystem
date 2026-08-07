@@ -68,7 +68,12 @@ public class OverviewFragment extends BaseFragment {
         // Pass the server-synced time along with each update so isOnline() has a real
         // value to compare against, instead of defaulting to 0 (which made every plant
         // show as Online regardless of actual connectivity).
-        viewModel.getPlants().observe(getViewLifecycleOwner(),
-                newPlants -> adapter.updatePlants(newPlants, viewModel.getCurrentServerTime()));
+        viewModel.getPlants().observe(getViewLifecycleOwner(), newPlants -> {
+            java.util.List<PlantReading> filtered = new java.util.ArrayList<>();
+            for (PlantReading p : newPlants) {
+                if (p.isTaken()) filtered.add(p);
+            }
+            adapter.updatePlants(filtered, viewModel.getCurrentServerTime());
+        });
     }
 }

@@ -75,6 +75,11 @@ public class PlantMonitoringService extends Service {
                     String plantId = plantSnapshot.getKey();
                     if (plantId == null || plantId.startsWith(".") || plantId.equals("logs")) continue;
 
+                    // Skip hardware slots that aren't currently "taken" (assigned to a plant)
+                    Object takenObj = plantSnapshot.child("taken").getValue();
+                    Integer takenInt = parseSafeInt(takenObj);
+                    if (takenInt == null || takenInt != 1) continue;
+
                     String plantName = plantSnapshot.child("name").getValue(String.class);
                     if (plantName == null) plantName = plantId;
 

@@ -143,7 +143,8 @@ public class DashboardFragment extends BaseFragment {
         String query = searchText.toLowerCase(Locale.getDefault());
         List<PlantReading> filtered = new ArrayList<>();
         for (PlantReading plant : allPlants) {
-            if (plant.getPlantName().toLowerCase(Locale.getDefault()).contains(query)) {
+            // Only show plants that are currently "taken" (assigned to a sensor)
+            if (plant.isTaken() && plant.getPlantName().toLowerCase(Locale.getDefault()).contains(query)) {
                 filtered.add(plant);
             }
         }

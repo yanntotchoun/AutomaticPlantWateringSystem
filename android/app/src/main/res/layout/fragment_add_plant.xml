@@ -56,6 +56,8 @@
                     app:boxCornerRadiusBottomStart="18dp"
                     app:boxCornerRadiusTopEnd="18dp"
                     app:boxCornerRadiusTopStart="18dp"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="15"
                     app:hintEnabled="true"
                     app:hintTextColor="@color/text_gray_555">
 
@@ -65,6 +67,7 @@
                         android:layout_height="wrap_content"
                         android:hint="@string/plant_name_hint"
                         android:inputType="textCapWords"
+                        android:maxLength="15"
                         android:maxLines="1" />
 
                 </com.google.android.material.textfield.TextInputLayout>

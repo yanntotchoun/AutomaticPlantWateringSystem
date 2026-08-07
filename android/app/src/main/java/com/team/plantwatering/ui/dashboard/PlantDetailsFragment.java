@@ -38,8 +38,9 @@ public class PlantDetailsFragment extends Fragment {
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
-    private TextView lastWateredText;
+    private TextView lastSeenText;
     private TextView connectionStatusText;
+    private TextView hardwareSlotText;
     private MaterialButton waterNowButton;
     private View quickRefreshButton;
     private SeekBar durationBar;
@@ -82,8 +83,9 @@ public class PlantDetailsFragment extends Fragment {
         }
 
         settingsManager = new PlantSettingsManager(requireContext());
-        lastWateredText = view.findViewById(R.id.text_last_watered);
+        lastSeenText = view.findViewById(R.id.text_last_watered);
         connectionStatusText = view.findViewById(R.id.text_connection_status);
+        hardwareSlotText = view.findViewById(R.id.text_hardware_slot);
         currentProfileText = view.findViewById(R.id.text_current_profile);
         wateringLogContainer =
                 view.findViewById(R.id.layout_watering_log);
@@ -188,6 +190,20 @@ public class PlantDetailsFragment extends Fragment {
 
         PlantViewBinder.bindAvatar(getView().findViewById(R.id.text_avatar), plant.getPlantName());
         ((TextView) getView().findViewById(R.id.text_plant_name)).setText(plant.getPlantName());
+        
+        if (hardwareSlotText != null) {
+            String slotId = plant.getIdentifier().toLowerCase();
+            if (slotId.contains("slot1")) {
+                hardwareSlotText.setText("Soil Moisture Sensor 1");
+                hardwareSlotText.setVisibility(View.VISIBLE);
+            } else if (slotId.contains("slot2")) {
+                hardwareSlotText.setText("Soil Moisture Sensor 2");
+                hardwareSlotText.setVisibility(View.VISIBLE);
+            } else {
+                hardwareSlotText.setVisibility(View.GONE);
+            }
+        }
+
         TextView statusMessage = getView().findViewById(R.id.text_status_message);
         statusMessage.setText(DashboardUtils.plantStatusMessage(plant.getSoilHumidity(), profile.drySoil));
         statusMessage.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
@@ -203,8 +219,8 @@ public class PlantDetailsFragment extends Fragment {
                 plant.getWaterTank()
         );
 
-        lastWateredText.setText(DashboardUtils.formatRelativeLastWateredTime(
-                plant.getLastWateredTimeMillis(), viewModel.getCurrentServerTime()));
+        lastSeenText.setText(DashboardUtils.formatRelativeTime(
+                plant.getLastSeenMillis(), viewModel.getCurrentServerTime()));
 
         long serverTime = viewModel.getCurrentServerTime();
         boolean isOnline = plant.isOnline(serverTime);
@@ -343,7 +359,7 @@ public class PlantDetailsFragment extends Fragment {
 
         viewModel.stopListeningForWateringLog();
 
-        lastWateredText = null;
+        lastSeenText = null;
         connectionStatusText = null;
         currentProfileText = null;
         wateringLogContainer = null;

@@ -5,7 +5,7 @@
     <!-- Shared -->
     <string name="tap_card_to_open">Tap card to open plant page</string>
     <string name="soil_humidity">Soil humidity</string>
-    <string name="last_watered">Last watered</string>
+    <string name="last_seen_online">Last seen online</string>
     <string name="water_tank">Water tank</string>
     <string name="water_tank_bucket">Water tank bucket</string>
     <string name="show_plant_information">Show plant information</string>

@@ -222,6 +222,11 @@ public class PlantViewModel extends ViewModel {
                     Integer takenInt = parseSafeInt(takenObj);
                     boolean isTaken = (takenInt != null && takenInt == 1);
 
+                    // New: Read explicit sensor_index attribute
+                    Object sensorIndexObj = plantSnapshot.child("sensor_index").getValue();
+                    Integer sensorIndexInt = parseSafeInt(sensorIndexObj);
+                    int sensorIndex = (sensorIndexInt != null) ? sensorIndexInt : (key.contains("slot2") ? 2 : 1);
+
                     int h = (moisture != null) ? moisture : 0;
                     // Ensure moisture stays within 0-100% range
                     if (h > 100) h = 100;
@@ -236,8 +241,8 @@ public class PlantViewModel extends ViewModel {
                     String sm = (mode != null) ? mode : "Auto";
                     boolean ipa = (isPumpActive != null && isPumpActive);
 
-                    // Pass both key (identifier) and name (display)
-                    updatedPlants.add(new PlantReading(key, name, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken));
+                    // Pass all data including new sensorIndex
+                    updatedPlants.add(new PlantReading(key, name, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken, sensorIndex));
                 }
                 Log.d(
                         TAG,
@@ -417,6 +422,10 @@ public class PlantViewModel extends ViewModel {
 
         // Mark as taken for hardware slot logic
         plantRef.child("taken").setValue(1);
+        
+        // Explicitly set sensor index attribute as requested
+        int sensorIndex = slotId.contains("slot2") ? 2 : 1;
+        plantRef.child("sensor_index").setValue(sensorIndex);
 
         String nowStr = firmwareDateFormat.format(new Date());
         plantRef.child("last_time").setValue(nowStr);
@@ -455,10 +464,22 @@ public class PlantViewModel extends ViewModel {
     }
 
     /**
-     * Deletes the plant node entirely.
+     * Resets a hardware slot by marking it as not taken.
+     * This "leaves the space open" in the database for the next plant.
      */
     public void deletePlant(String plantId) {
-        databaseReference.child(plantId).removeValue();
+        DatabaseReference plantRef = databaseReference.child(plantId);
+        
+        // Reset the 'taken' flag and identifying information
+        plantRef.child("taken").setValue(0);
+        plantRef.child("name").setValue("Available Slot");
+        
+        // Optional: Reset thresholds to standard for next use
+        plantRef.child("threshold_profile").setValue("standard");
+        plantRef.child("threshold").setValue(30);
+        
+        // Reset manual commands
+        plantRef.child("water_pump_state").setValue(false);
     }
 
     public void activateConnectionPortal() {

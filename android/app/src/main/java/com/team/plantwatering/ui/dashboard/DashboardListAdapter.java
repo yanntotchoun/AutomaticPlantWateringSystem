@@ -151,10 +151,11 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final TextView avatar;
         private final TextView plantName;
         private final TextView hardwareSlot;
+        private final TextView hardwareSlotExpanded;
         private final TextView statusChip;
         private final LinearLayout dropletContainer;
         private final TextView humidityPercent;
-        private final TextView lastWatered;
+        private final TextView lastSeen;
         private final View toggleButton;
         private final View expandableSection;
         private final ImageView bucket;
@@ -167,10 +168,11 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             avatar = itemView.findViewById(R.id.text_avatar);
             plantName = itemView.findViewById(R.id.text_plant_name);
             hardwareSlot = itemView.findViewById(R.id.text_hardware_slot);
+            hardwareSlotExpanded = itemView.findViewById(R.id.text_hardware_slot_expanded);
             statusChip = itemView.findViewById(R.id.chip_status);
             dropletContainer = itemView.findViewById(R.id.droplet_container);
             humidityPercent = itemView.findViewById(R.id.text_humidity_percent);
-            lastWatered = itemView.findViewById(R.id.text_last_watered);
+            lastSeen = itemView.findViewById(R.id.text_last_watered);
             toggleButton = itemView.findViewById(R.id.button_toggle_expand);
             expandableSection = itemView.findViewById(R.id.expandable_section);
             bucket = itemView.findViewById(R.id.image_bucket);
@@ -189,14 +191,20 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             // Show hardware slot association
             // The identifier (Firebase key) is "slot1" or "slot2"
             String slotId = plant.getIdentifier().toLowerCase();
-            if (slotId.contains("slot1")) {
-                hardwareSlot.setText("Soil Moisture Sensor 1");
+            String sensorLabel = slotId.contains("slot1") ? "Soil Moisture Sensor 1" : (slotId.contains("slot2") ? "Soil Moisture Sensor 2" : null);
+
+            if (sensorLabel != null) {
+                hardwareSlot.setText(sensorLabel);
                 hardwareSlot.setVisibility(View.VISIBLE);
-            } else if (slotId.contains("slot2")) {
-                hardwareSlot.setText("Soil Moisture Sensor 2");
-                hardwareSlot.setVisibility(View.VISIBLE);
+                if (hardwareSlotExpanded != null) {
+                    hardwareSlotExpanded.setText(sensorLabel);
+                    hardwareSlotExpanded.setVisibility(View.VISIBLE);
+                }
             } else {
                 hardwareSlot.setVisibility(View.GONE);
+                if (hardwareSlotExpanded != null) {
+                    hardwareSlotExpanded.setVisibility(View.GONE);
+                }
             }
 
             PlantViewBinder.bindStatusChip(statusChip, plant.getSoilHumidity(), profile.drySoil);
@@ -205,8 +213,8 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
             humidityPercent.setText(String.format(Locale.getDefault(), "%d%%", plant.getSoilHumidity()));
             humidityPercent.setTextColor(DashboardUtils.humidityTextColor(plant.getSoilHumidity(), profile.drySoil));
 
-            lastWatered.setText(DashboardUtils.formatRelativeLastWateredTime(
-                    plant.getLastWateredTimeMillis(), currentServerTime));
+            lastSeen.setText(DashboardUtils.formatRelativeTime(
+                    plant.getLastSeenMillis(), currentServerTime));
 
             boolean isExpanded = expandedPlantNames.contains(plant.getPlantName());
             expandableSection.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
