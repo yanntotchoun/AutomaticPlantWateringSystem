@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -36,15 +37,41 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/text_avatar"
+                    <!--
+                        Both the normal letter avatar and the plant image
+                        occupy the same circle.
+
+                        If there is no image_url:
+                        text_avatar is shown.
+
+                        If there is an image_url:
+                        image_plant_avatar is shown.
+                    -->
+                    <FrameLayout
                         android:layout_width="58dp"
-                        android:layout_height="58dp"
-                        android:background="@drawable/bg_avatar_circle"
-                        android:gravity="center"
-                        android:textColor="@color/avatar_text"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
+                        android:layout_height="58dp">
+
+                        <TextView
+                            android:id="@+id/text_avatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_avatar_circle"
+                            android:gravity="center"
+                            android:textColor="@color/avatar_text"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/image_plant_avatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_avatar_circle"
+                            android:clipToOutline="true"
+                            android:contentDescription="Plant photo"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -75,9 +102,22 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="15sp" />
+
                     </LinearLayout>
+
                 </LinearLayout>
 
+                <!-- Add / Change Plant Photo -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_change_photo"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Add photo"
+                    android:textAllCaps="false" />
+
+                <!-- Soil humidity -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -107,6 +147,7 @@
                         android:layout_marginStart="12dp"
                         android:textSize="24sp"
                         android:textStyle="bold" />
+
                 </LinearLayout>
 
                 <View
@@ -142,6 +183,7 @@
                         android:layout_marginStart="10dp"
                         android:textSize="20sp"
                         android:textStyle="bold" />
+
                 </LinearLayout>
 
                 <!-- Last watered row -->
@@ -167,6 +209,7 @@
                         android:textColor="@color/text_dark"
                         android:textSize="17sp"
                         android:textStyle="bold" />
+
                 </LinearLayout>
 
                 <!-- Connection Status row -->
@@ -191,6 +234,7 @@
                         android:gravity="end"
                         android:textSize="17sp"
                         android:textStyle="bold" />
+
                 </LinearLayout>
 
                 <View
@@ -198,6 +242,8 @@
                     android:layout_height="1dp"
                     android:layout_marginVertical="20dp"
                     android:background="@color/divider_gray" />
+
+                <!-- Watering Log -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -228,6 +274,7 @@
                     android:layout_marginVertical="20dp"
                     android:background="@color/divider_gray" />
 
+                <!-- Recommendation -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -250,6 +297,7 @@
                     android:layout_marginVertical="20dp"
                     android:background="@color/divider_gray" />
 
+                <!-- Threshold Profile -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -281,6 +329,7 @@
                     android:layout_marginVertical="20dp"
                     android:background="@color/divider_gray" />
 
+                <!-- Watering Control -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -311,8 +360,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Manual Watering Control"
-                        android:textSize="16sp"
-                        />
+                        android:textSize="16sp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_quick_refresh"
@@ -335,8 +383,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:max="60"
-                        android:progress="0"/>
+                        android:max="55"
+                        android:progress="0" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_water_now"
@@ -354,9 +402,11 @@
                         android:textColor="#9C1C16"
                         android:visibility="gone"
                         app:strokeColor="#9C1C16" />
+
                 </LinearLayout>
 
             </LinearLayout>
+
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton

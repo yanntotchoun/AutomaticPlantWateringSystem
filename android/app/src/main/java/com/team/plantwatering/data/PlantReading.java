@@ -23,6 +23,9 @@ public class PlantReading implements Parcelable {
     private final boolean isTaken;
     private final int sensorIndex;
 
+    // Plant image stored as Cloudinary URL
+    private final String imageUrl;
+
     public PlantReading(
             String identifier,
             String plantName,
@@ -38,6 +41,8 @@ public class PlantReading implements Parcelable {
             boolean autoWateringEnabled,
             boolean isTaken,
             int sensorIndex
+            boolean isTaken,
+            String imageUrl
     ) {
         this.identifier = identifier;
         this.plantName = plantName;
@@ -52,6 +57,7 @@ public class PlantReading implements Parcelable {
         this.isPumpActive = isPumpActive;
         this.autoWateringEnabled = autoWateringEnabled;
         this.isTaken = isTaken;
+        this.imageUrl = imageUrl;
         this.sensorIndex = sensorIndex;
     }
 
@@ -70,6 +76,7 @@ public class PlantReading implements Parcelable {
         autoWateringEnabled = in.readByte() != 0;
         isTaken = in.readByte() != 0;
         sensorIndex = in.readInt();
+        imageUrl = in.readString();
     }
 
     public static final Creator<PlantReading> CREATOR = new Creator<PlantReading>() {
@@ -118,7 +125,7 @@ public class PlantReading implements Parcelable {
 
     public boolean isOnline(long currentTimeMillis) {
 
-        return (System.currentTimeMillis() - lastSeenMillis) < 600_000L;
+        return (currentTimeMillis - lastSeenMillis) < 600_000L;
     }
 
     public boolean isManualWateringCommand() {
@@ -145,6 +152,10 @@ public class PlantReading implements Parcelable {
         return isTaken;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
     public int getSensorIndex() {
         return sensorIndex;
     }
@@ -169,6 +180,7 @@ public class PlantReading implements Parcelable {
         dest.writeByte((byte) (isPumpActive ? 1 : 0));
         dest.writeByte((byte) (autoWateringEnabled ? 1 : 0));
         dest.writeByte((byte) (isTaken ? 1 : 0));
+        dest.writeString(imageUrl);
         dest.writeInt(sensorIndex);
     }
 }

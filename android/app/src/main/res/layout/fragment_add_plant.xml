@@ -46,6 +46,27 @@
                     android:textColor="@color/text_gray_666"
                     android:textSize="15sp" />
 
+                <!-- Plant photo -->
+                <ImageView
+                    android:id="@+id/image_plant_preview"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_avatar_circle"
+                    android:clipToOutline="true"
+                    android:contentDescription="Plant photo"
+                    android:scaleType="centerCrop" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_select_photo"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:text="Select photo" />
+
                 <!-- Plant name -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
