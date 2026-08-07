@@ -21,20 +21,42 @@ import androidx.lifecycle.ViewModelProvider;
 import com.team.plantwatering.MainActivity;
 import com.team.plantwatering.R;
 import com.team.plantwatering.data.PlantReading;
+import android.net.Uri;
+import android.widget.ImageView;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 
 public class AddPlantFragment extends Fragment {
+
     EditText name;
+    Button saveButton, cancelButton, selectPhotoButton;
     Button saveButton;
     TextView limitStatus;
+    ImageView plantImagePreview;
+
     boolean isHardwareFull = false;
     String selectedSlot = null;
     java.util.List<String> existingNames = new java.util.ArrayList<>();
+
+    private Uri selectedImageUri = null;
 
     public interface PlantClickListener {
         void onPlantClicked(PlantReading plant);
     }
 
+    private final ActivityResultLauncher<String> imagePickerLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.GetContent(),
+                    uri -> {
+                        if (uri != null) {
+                            selectedImageUri = uri;
+
+                            plantImagePreview.setImageURI(uri);
+                        }
+                    }
+            );
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_add_plant, container, false);
@@ -52,6 +74,8 @@ public class AddPlantFragment extends Fragment {
         name = view.findViewById(R.id.edit_plant_name);
         saveButton = view.findViewById(R.id.button_save_plant);
         limitStatus = view.findViewById(R.id.text_slot_status); // Reusing the ID or adding a generic status
+        plantImagePreview = view.findViewById(R.id.image_plant_preview);
+        selectPhotoButton = view.findViewById(R.id.button_select_photo);
 
         View header = view.findViewById(R.id.header_root);
         ((TextView) header.findViewById(R.id.text_header_title)).setText(R.string.add_plant_title);
@@ -76,7 +100,7 @@ public class AddPlantFragment extends Fragment {
                     String identifier = plant.getIdentifier().toLowerCase();
                     if (identifier.contains("slot1")) slot1Taken = true;
                     else if (identifier.contains("slot2")) slot2Taken = true;
-                    
+
                     existingNames.add(plant.getPlantName().toLowerCase().trim());
                 }
             }
@@ -108,6 +132,9 @@ public class AddPlantFragment extends Fragment {
             updateSaveButtonState();
         });
 
+        selectPhotoButton.setOnClickListener(v -> {
+            imagePickerLauncher.launch("image/*");
+        });
         saveButton.setOnClickListener(v -> {
             String plantName = name.getText().toString().trim();
             if (plantName.isEmpty()) {

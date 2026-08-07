@@ -19,14 +19,20 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
 import com.google.firebase.database.Query;
+
 import java.util.Collections;
+
 import android.util.Log;
 
 public class PlantViewModel extends ViewModel {
+
     private static final String TAG = "PlantFirebase";
 
-    private final MutableLiveData<List<PlantReading>> plantsLiveData = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<List<PlantReading>> plantsLiveData =
+            new MutableLiveData<>(new ArrayList<>());
+
     private final DatabaseReference databaseReference;
     private ValueEventListener plantsListener;
 
@@ -39,62 +45,102 @@ public class PlantViewModel extends ViewModel {
     private ValueEventListener wateringLogListener;
 
     // Should match the firmware time format here
-    private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
+    private final SimpleDateFormat firmwareDateFormat =
+            new SimpleDateFormat(
+                    "EEEE, MMMM dd HH:mm:ss",
+                    Locale.getDefault()
+            );
+
     private long serverTimeOffset = 0;
     private String lastNamesList = null;
 
     public PlantViewModel() {
-        databaseReference = FirebaseDatabase.getInstance().getReference("plants");
+
+        // Fixed device slots (slot1, slot2, slot3...) live directly under "plants" -
+        // they're pre-provisioned by the hardware team, not generated dynamically by the app.
+        databaseReference =
+                FirebaseDatabase
+                        .getInstance()
+                        .getReference("plants");
 
         listenForServerTimeOffset();
         listenForFirebaseConnection();
     }
+
     private void listenForFirebaseConnection() {
+
         FirebaseDatabase.getInstance()
                 .getReference(".info/connected")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(
-                            @NonNull DataSnapshot snapshot
-                    ) {
-                        Boolean connected =
-                                snapshot.getValue(Boolean.class);
+                .addValueEventListener(
+                        new ValueEventListener() {
 
-                        if (Boolean.TRUE.equals(connected)) {
-                            Log.d(TAG, "Connected to Firebase.");
-                        } else {
-                            Log.w(TAG, "Not connected to Firebase.");
+                            @Override
+                            public void onDataChange(
+                                    @NonNull DataSnapshot snapshot
+                            ) {
+
+                                Boolean connected =
+                                        snapshot.getValue(Boolean.class);
+
+                                if (Boolean.TRUE.equals(connected)) {
+
+                                    Log.d(
+                                            TAG,
+                                            "Connected to Firebase."
+                                    );
+
+                                } else {
+
+                                    Log.w(
+                                            TAG,
+                                            "Not connected to Firebase."
+                                    );
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(
+                                    @NonNull DatabaseError error
+                            ) {
+
+                                Log.e(
+                                        TAG,
+                                        "Firebase connection check failed: "
+                                                + error.getMessage(),
+                                        error.toException()
+                                );
+                            }
                         }
-                    }
-
-                    @Override
-                    public void onCancelled(
-                            @NonNull DatabaseError error
-                    ) {
-                        Log.e(
-                                TAG,
-                                "Firebase connection check failed: "
-                                        + error.getMessage(),
-                                error.toException()
-                        );
-                    }
-                });
+                );
     }
 
     private void listenForServerTimeOffset() {
-        FirebaseDatabase.getInstance().getReference(".info/serverTimeOffset")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Long offset = snapshot.getValue(Long.class);
-                        if (offset != null) {
-                            serverTimeOffset = offset;
-                        }
-                    }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
-                });
+        FirebaseDatabase.getInstance()
+                .getReference(".info/serverTimeOffset")
+                .addValueEventListener(
+                        new ValueEventListener() {
+
+                            @Override
+                            public void onDataChange(
+                                    @NonNull DataSnapshot snapshot
+                            ) {
+
+                                Long offset =
+                                        snapshot.getValue(Long.class);
+
+                                if (offset != null) {
+                                    serverTimeOffset = offset;
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(
+                                    @NonNull DatabaseError error
+                            ) {
+                            }
+                        }
+                );
     }
 
     public long getCurrentServerTime() {
@@ -115,56 +161,85 @@ public class PlantViewModel extends ViewModel {
      * /plants/{plantId}/watering_log/{eventId}/timestamp
      */
     public void startListeningForWateringLog(String plantId) {
+
         stopListeningForWateringLog();
 
         // Clear data left over from a previously opened plant.
         wateringLogLiveData.setValue(new ArrayList<>());
 
-        wateringLogQuery = databaseReference
-                .child(plantId)
-                .child("watering_log")
-                .orderByChild("timestamp")
-                .limitToLast(WATERING_LOG_LIMIT);
+        wateringLogQuery =
+                databaseReference
+                        .child(plantId)
+                        .child("watering_log")
+                        .orderByChild("timestamp")
+                        .limitToLast(WATERING_LOG_LIMIT);
 
-        wateringLogListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List<Long> wateringTimes = new ArrayList<>();
+        wateringLogListener =
+                new ValueEventListener() {
 
-                for (DataSnapshot eventSnapshot : snapshot.getChildren()) {
-                    Long timestamp = parseSafeLong(
-                            eventSnapshot
-                                    .child("timestamp")
-                                    .getValue()
-                    );
+                    @Override
+                    public void onDataChange(
+                            @NonNull DataSnapshot snapshot
+                    ) {
 
-                   //ignore the placeholder 0
-                    if (timestamp != null && timestamp > 0L) {
-                        wateringTimes.add(timestamp);
+                        List<Long> wateringTimes =
+                                new ArrayList<>();
+
+                        for (
+                                DataSnapshot eventSnapshot :
+                                snapshot.getChildren()
+                        ) {
+
+                            Long timestamp =
+                                    parseSafeLong(
+                                            eventSnapshot
+                                                    .child("timestamp")
+                                                    .getValue()
+                                    );
+
+                            // Ignore the placeholder 0
+                            if (
+                                    timestamp != null
+                                            && timestamp > 0L
+                            ) {
+                                wateringTimes.add(timestamp);
+                            }
+                        }
+
+                        // Firebase returns oldest to newest.
+                        // Display newest first.
+                        Collections.sort(
+                                wateringTimes,
+                                Collections.reverseOrder()
+                        );
+
+                        wateringLogLiveData.setValue(
+                                wateringTimes
+                        );
                     }
-                }
 
-                // Firebase returns oldest to newest. Display newest first.
-                Collections.sort(
-                        wateringTimes,
-                        Collections.reverseOrder()
-                );
+                    @Override
+                    public void onCancelled(
+                            @NonNull DatabaseError error
+                    ) {
 
-                wateringLogLiveData.setValue(wateringTimes);
-            }
+                        wateringLogLiveData.setValue(
+                                new ArrayList<>()
+                        );
+                    }
+                };
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                wateringLogLiveData.setValue(new ArrayList<>());
-            }
-        };
-
-        wateringLogQuery.addValueEventListener(wateringLogListener);
+        wateringLogQuery.addValueEventListener(
+                wateringLogListener
+        );
     }
 
     public void stopListeningForWateringLog() {
-        if (wateringLogQuery != null
-                && wateringLogListener != null) {
+
+        if (
+                wateringLogQuery != null
+                        && wateringLogListener != null
+        ) {
 
             wateringLogQuery.removeEventListener(
                     wateringLogListener
@@ -176,143 +251,358 @@ public class PlantViewModel extends ViewModel {
     }
 
     public void startListeningForChanges() {
-        if (plantsListener != null) return; // Already listening
 
-        plantsListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.d(
-                        TAG,
-                        "Firebase read succeeded. Children under /plants: "
-                                + snapshot.getChildrenCount()
-                );
-                List<PlantReading> updatedPlants = new ArrayList<>();
-                for (DataSnapshot plantSnapshot : snapshot.getChildren()) { //Every plant captured here is a child of the "plants" node which is the root node.
-                    String key = plantSnapshot.getKey();
+        if (plantsListener != null) {
+            return;
+        }
 
-                    if (key == null || key.startsWith(".") || key.equals("logs") || key.equals("plants")) continue;
+        plantsListener =
+                new ValueEventListener() {
 
-                    // Display name is stored as a field now.
-                    String name = plantSnapshot.child("name").getValue(String.class);
-                    if (name == null) name = key;
+                    @Override
+                    public void onDataChange(
+                            @NonNull DataSnapshot snapshot
+                    ) {
 
-                    Integer moisture = parseSafeInt(plantSnapshot.child("moisture_level").getValue()); //Those are the leaves of each child node
-                    String waterStr = plantSnapshot.child("water_level").getValue(String.class);
-                    String timeStr = plantSnapshot.child("last_time").getValue(String.class);
+                        Log.d(
+                                TAG,
+                                "Firebase read succeeded. Children under /plants: "
+                                        + snapshot.getChildrenCount()
+                        );
 
-                    String thresholdProfileId = plantSnapshot.child("threshold_profile").getValue(String.class);
-                    if (thresholdProfileId == null) thresholdProfileId = "standard";
+                        List<PlantReading> updatedPlants =
+                                new ArrayList<>();
 
-                    // Manual Watering Fields aligned with firmware key: "water_pump_state"
-                    Object pumpStateObj = plantSnapshot.child("water_pump_state").getValue();
-                    Boolean pumpState = parseSafeBoolean(pumpStateObj);
+                        for (
+                                DataSnapshot plantSnapshot :
+                                snapshot.getChildren()
+                        ) {
 
-                    String mode = plantSnapshot.child("watering_mode").getValue(String.class);
-                    Boolean autoEnabled = parseSafeBoolean(plantSnapshot.child("auto_watering_mode").getValue());
+                            // Every plant captured here is a child
+                            // of the "plants" node.
+                            String key =
+                                    plantSnapshot.getKey();
 
-                    // Read the duration from the latest status check instead of hardcoding it
-                    Object durationObj = plantSnapshot.child("latest_watering_status").child("duration").getValue();
-                    Integer duration = parseSafeInt(durationObj);
+                            if (
+                                    key == null
+                                            || key.startsWith(".")
+                                            || key.equals("logs")
+                                            || key.equals("plants")
+                            ) {
+                                continue;
+                            }
 
-                    // Feedback field from ESP
-                    Boolean isPumpActive = parseSafeBoolean(plantSnapshot.child("is_pump_active").getValue());
+                            // Display name is stored as a field now.
+                            String name =
+                                    plantSnapshot
+                                            .child("name")
+                                            .getValue(String.class);
 
-                    // New: check 'taken' key for hardware slot availability
-                    Object takenObj = plantSnapshot.child("taken").getValue();
-                    Integer takenInt = parseSafeInt(takenObj);
-                    boolean isTaken = (takenInt != null && takenInt == 1);
+                            if (name == null) {
+                                name = key;
+                            }
 
-                    int h = (moisture != null) ? moisture : 0;
-                    // Ensure moisture stays within 0-100% range
-                    if (h > 100) h = 100;
-                    if (h < 0) h = 0;
+                            Integer moisture =
+                                    parseSafeInt(
+                                            plantSnapshot
+                                                    .child("moisture_level")
+                                                    .getValue()
+                                    );
 
-                    // Water message from ESP (e.g. "Sufficient", "Low", "Connecting...")
-                    String w = (waterStr != null) ? waterStr : "Unknown";
-                    long lw = parseFirmwareTimeToMillis(timeStr); // time translation for the ESP
-                    boolean mc = (pumpState != null && pumpState); // pump action made by the user
-                    int md = (duration != null) ? duration : 3; // default to 3s if not found
-                    boolean ac = (autoEnabled != null) && autoEnabled; // auto mode feedback
-                    String sm = (mode != null) ? mode : "Auto";
-                    boolean ipa = (isPumpActive != null && isPumpActive);
+                            String waterStr =
+                                    plantSnapshot
+                                            .child("water_level")
+                                            .getValue(String.class);
 
-                    // Pass both key (identifier) and name (display)
-                    updatedPlants.add(new PlantReading(key, name, h, w, lw, thresholdProfileId, lw, mc, md, sm, ipa, ac, isTaken));
-                }
-                Log.d(
-                        TAG,
-                        "Plants successfully converted for the UI: "
-                                + updatedPlants.size()
-                );
-                plantsLiveData.setValue(updatedPlants);
-                updatePlantNamesNode(updatedPlants);
-            }
+                            String timeStr =
+                                    plantSnapshot
+                                            .child("last_time")
+                                            .getValue(String.class);
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(
-                        TAG,
-                        "Firebase /plants read failed. Code: "
-                                + error.getCode()
-                                + ". Message: "
-                                + error.getMessage(),
-                        error.toException()
-                );
-            }
-        };
-        databaseReference.addValueEventListener(plantsListener);
+                            // Plant image URL stored in Firebase.
+                            String imageUrl =
+                                    plantSnapshot
+                                            .child("image_url")
+                                            .getValue(String.class);
+
+                            String thresholdProfileId =
+                                    plantSnapshot
+                                            .child("threshold_profile")
+                                            .getValue(String.class);
+
+                            if (thresholdProfileId == null) {
+                                thresholdProfileId = "standard";
+                            }
+
+                            // Manual Watering Fields aligned
+                            // with firmware key: "water_pump_state"
+                            Object pumpStateObj =
+                                    plantSnapshot
+                                            .child("water_pump_state")
+                                            .getValue();
+
+                            Boolean pumpState =
+                                    parseSafeBoolean(
+                                            pumpStateObj
+                                    );
+
+                            String mode =
+                                    plantSnapshot
+                                            .child("watering_mode")
+                                            .getValue(String.class);
+
+                            Boolean autoEnabled =
+                                    parseSafeBoolean(
+                                            plantSnapshot
+                                                    .child("auto_watering_mode")
+                                                    .getValue()
+                                    );
+
+                            // Read the duration from the latest
+                            // status check instead of hardcoding it.
+                            Object durationObj =
+                                    plantSnapshot
+                                            .child("latest_watering_status")
+                                            .child("duration")
+                                            .getValue();
+
+                            Integer duration =
+                                    parseSafeInt(durationObj);
+
+                            // Feedback field from ESP
+                            Boolean isPumpActive =
+                                    parseSafeBoolean(
+                                            plantSnapshot
+                                                    .child("is_pump_active")
+                                                    .getValue()
+                                    );
+
+                            // Check 'taken' key for hardware
+                            // slot availability.
+                            Object takenObj =
+                                    plantSnapshot
+                                            .child("taken")
+                                            .getValue();
+
+                            Integer takenInt =
+                                    parseSafeInt(takenObj);
+
+                            boolean isTaken =
+                                    takenInt != null
+                                            && takenInt == 1;
+
+                            int h =
+                                    moisture != null
+                                            ? moisture
+                                            : 0;
+
+                            // Ensure moisture stays within
+                            // 0-100% range.
+                            if (h > 100) {
+                                h = 100;
+                            }
+
+                            if (h < 0) {
+                                h = 0;
+                            }
+
+                            // Water message from ESP
+                            // e.g. "Sufficient", "Low", "Connecting..."
+                            String w =
+                                    waterStr != null
+                                            ? waterStr
+                                            : "Unknown";
+
+                            long lw =
+                                    parseFirmwareTimeToMillis(
+                                            timeStr
+                                    );
+
+                            boolean mc =
+                                    pumpState != null
+                                            && pumpState;
+
+                            int md =
+                                    duration != null
+                                            ? duration
+                                            : 3;
+
+                            boolean ac =
+                                    autoEnabled != null
+                                            && autoEnabled;
+
+                            String sm =
+                                    mode != null
+                                            ? mode
+                                            : "Auto";
+
+                            boolean ipa =
+                                    isPumpActive != null
+                                            && isPumpActive;
+
+                            /*
+                             * key (slot id, e.g. "slot1") is used
+                             * internally for database operations.
+                             *
+                             * The image URL is now also passed
+                             * into PlantReading.
+                             */
+                            updatedPlants.add(
+                                    new PlantReading(
+                                            key,
+                                            h,
+                                            w,
+                                            lw,
+                                            thresholdProfileId,
+                                            lw,
+                                            mc,
+                                            md,
+                                            sm,
+                                            ipa,
+                                            ac,
+                                            isTaken,
+                                            imageUrl
+                                    )
+                            );
+                        }
+
+                        Log.d(
+                                TAG,
+                                "Plants successfully converted for the UI: "
+                                        + updatedPlants.size()
+                        );
+
+                        plantsLiveData.setValue(
+                                updatedPlants
+                        );
+
+                        updatePlantNamesNode(
+                                updatedPlants
+                        );
+                    }
+
+                    @Override
+                    public void onCancelled(
+                            @NonNull DatabaseError error
+                    ) {
+
+                        Log.e(
+                                TAG,
+                                "Firebase /plants read failed. Code: "
+                                        + error.getCode()
+                                        + ". Message: "
+                                        + error.getMessage(),
+                                error.toException()
+                        );
+                    }
+                };
+
+        databaseReference.addValueEventListener(
+                plantsListener
+        );
     }
 
     @Override
     protected void onCleared() {
+
         super.onCleared();
 
-        if (databaseReference != null && plantsListener != null) {
-            databaseReference.removeEventListener(plantsListener);
+        if (
+                databaseReference != null
+                        && plantsListener != null
+        ) {
+
+            databaseReference.removeEventListener(
+                    plantsListener
+            );
         }
 
         stopListeningForWateringLog();
     }
 
-    private void updatePlantNamesNode(List<PlantReading> plants) {
-        if (plants == null) return;
+    private void updatePlantNamesNode(
+            List<PlantReading> plants
+    ) {
 
-        StringBuilder sb = new StringBuilder();
+        if (plants == null) {
+            return;
+        }
+
+        StringBuilder sb =
+                new StringBuilder();
+
         for (int i = 0; i < plants.size(); i++) {
-            sb.append(plants.get(i).getPlantName());
+
+            sb.append(
+                    plants.get(i).getPlantName()
+            );
+
             if (i < plants.size() - 1) {
                 sb.append(", ");
             }
         }
 
-        String namesList = sb.toString();
+        String namesList =
+                sb.toString();
+
         if (namesList.equals(lastNamesList)) {
-            return; // No change, skip database write
+            return;
         }
 
         lastNamesList = namesList;
-        FirebaseDatabase.getInstance().getReference("names").setValue(namesList);
+
+        FirebaseDatabase
+                .getInstance()
+                .getReference("names")
+                .setValue(namesList);
     }
 
-    private long parseFirmwareTimeToMillis(String timeStr) { // Time translation for the ESP
-        if (timeStr == null || timeStr.isEmpty()) return 0L;
+    private long parseFirmwareTimeToMillis(
+            String timeStr
+    ) {
+
+        if (
+                timeStr == null
+                        || timeStr.isEmpty()
+        ) {
+            return 0L;
+        }
+
         try {
-            Date date = firmwareDateFormat.parse(timeStr);
+
+            Date date =
+                    firmwareDateFormat.parse(
+                            timeStr
+                    );
+
             if (date != null) {
-                Calendar cal = Calendar.getInstance();
-                int currentYear = cal.get(Calendar.YEAR);
+
+                Calendar cal =
+                        Calendar.getInstance();
+
+                int currentYear =
+                        cal.get(Calendar.YEAR);
 
                 cal.setTime(date);
-                cal.set(Calendar.YEAR, currentYear); // "Guessing" the year is the current year
+
+                cal.set(
+                        Calendar.YEAR,
+                        currentYear
+                );
 
                 return cal.getTimeInMillis();
             }
+
         } catch (ParseException e) {
+
             return 0L;
         }
+
         return 0L;
     }
+
     private Long parseSafeLong(Object value) {
+
         if (value == null) {
             return null;
         }
@@ -322,9 +612,15 @@ public class PlantViewModel extends ViewModel {
         }
 
         if (value instanceof String) {
+
             try {
-                return Long.parseLong((String) value);
+
+                return Long.parseLong(
+                        (String) value
+                );
+
             } catch (NumberFormatException e) {
+
                 return null;
             }
         }
@@ -332,139 +628,341 @@ public class PlantViewModel extends ViewModel {
         return null;
     }
 
-    private Boolean parseSafeBoolean(Object value) {
-        if (value == null) return null;
-        if (value instanceof Boolean) return (Boolean) value;
-        if (value instanceof Integer) return (Integer) value == 1;
-        if (value instanceof Long) return (Long) value == 1L;
-        if (value instanceof Double) return ((Double) value).intValue() == 1;
-        if (value instanceof String) {
-            String s = (String) value;
-            return s.equalsIgnoreCase("true") || s.equals("1");
+    private Boolean parseSafeBoolean(
+            Object value
+    ) {
+
+        if (value == null) {
+            return null;
         }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        if (value instanceof Integer) {
+            return (Integer) value == 1;
+        }
+
+        if (value instanceof Long) {
+            return (Long) value == 1L;
+        }
+
+        if (value instanceof Double) {
+            return ((Double) value).intValue() == 1;
+        }
+
+        if (value instanceof String) {
+
+            String s =
+                    (String) value;
+
+            return s.equalsIgnoreCase("true")
+                    || s.equals("1");
+        }
+
         return null;
     }
 
-    private Integer parseSafeInt(Object value) {
-        if (value == null) return null;
-        if (value instanceof Integer) return (Integer) value;
-        if (value instanceof Long) return ((Long) value).intValue();
-        if (value instanceof Double) return ((Double) value).intValue();
-        if (value instanceof Boolean) return (Boolean) value ? 1 : 0;
+    private Integer parseSafeInt(
+            Object value
+    ) {
+
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+
+        if (value instanceof Long) {
+            return ((Long) value).intValue();
+        }
+
+        if (value instanceof Double) {
+            return ((Double) value).intValue();
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value ? 1 : 0;
+        }
+
         if (value instanceof String) {
+
             try {
-                return Integer.parseInt((String) value);
+
+                return Integer.parseInt(
+                        (String) value
+                );
+
             } catch (NumberFormatException e) {
+
                 return null;
             }
         }
+
         return null;
     }
 
-    public void updatePlantThreshold(String plantId, PlantSettingsManager.ThresholdProfile profile) {
-        DatabaseReference plantRef = databaseReference.child(plantId);
-        plantRef.child("threshold_profile").setValue(profile.id);
-        
-        // Push the RAW numeric values directly to Firebase for the ESP32 hardware to use
-        plantRef.child("threshold").setValue(profile.drySoil);
+    public void updatePlantThreshold(
+            String plantId,
+            PlantSettingsManager.ThresholdProfile profile
+    ) {
+
+        DatabaseReference plantRef =
+                databaseReference.child(plantId);
+
+        plantRef
+                .child("threshold_profile")
+                .setValue(profile.id);
+
+        // Push the RAW numeric values directly to Firebase
+        // for the ESP32 hardware to use.
+        plantRef
+                .child("threshold")
+                .setValue(profile.drySoil);
     }
 
     /**
-     * Updates all plants that use a specific profile with the new threshold value.
+     * Updates all plants that use a specific profile
+     * with the new threshold value.
      */
-    public void syncProfileChangesToFirebase(PlantSettingsManager.ThresholdProfile profile) {
-        databaseReference.get().addOnSuccessListener(snapshot -> {
-            for (DataSnapshot plantSnap : snapshot.getChildren()) {
-                String profileId = plantSnap.child("threshold_profile").getValue(String.class);
-                if (profileId != null && profileId.equals(profile.id)) {
-                    plantSnap.getRef().child("threshold").setValue(profile.drySoil);
-                }
-            }
-        });
+    public void syncProfileChangesToFirebase(
+            PlantSettingsManager.ThresholdProfile profile
+    ) {
+
+        databaseReference
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    for (
+                            DataSnapshot plantSnap :
+                            snapshot.getChildren()
+                    ) {
+
+                        String profileId =
+                                plantSnap
+                                        .child("threshold_profile")
+                                        .getValue(String.class);
+
+                        if (
+                                profileId != null
+                                        && profileId.equals(profile.id)
+                        ) {
+
+                            plantSnap
+                                    .getRef()
+                                    .child("threshold")
+                                    .setValue(
+                                            profile.drySoil
+                                    );
+                        }
+                    }
+                });
     }
 
     /**
-     * Reassigns all plants using a deleted profile back to the 'standard' profile.
+     * Reassigns all plants using a deleted profile
+     * back to the 'standard' profile.
      */
-    public void syncDeletionToFirebase(String deletedProfileId, PlantSettingsManager.ThresholdProfile standardProfile) {
-        databaseReference.get().addOnSuccessListener(snapshot -> {
-            for (DataSnapshot plantSnap : snapshot.getChildren()) {
-                String profileId = plantSnap.child("threshold_profile").getValue(String.class);
-                if (deletedProfileId.equals(profileId)) {
-                    DatabaseReference ref = plantSnap.getRef();
-                    ref.child("threshold_profile").setValue("standard");
-                    ref.child("threshold").setValue(standardProfile.drySoil);
-                }
-            }
-        });
+    public void syncDeletionToFirebase(
+            String deletedProfileId,
+            PlantSettingsManager.ThresholdProfile standardProfile
+    ) {
+
+        databaseReference
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    for (
+                            DataSnapshot plantSnap :
+                            snapshot.getChildren()
+                    ) {
+
+                        String profileId =
+                                plantSnap
+                                        .child("threshold_profile")
+                                        .getValue(String.class);
+
+                        if (
+                                deletedProfileId.equals(
+                                        profileId
+                                )
+                        ) {
+
+                            DatabaseReference ref =
+                                    plantSnap.getRef();
+
+                            ref
+                                    .child("threshold_profile")
+                                    .setValue("standard");
+
+                            ref
+                                    .child("threshold")
+                                    .setValue(
+                                            standardProfile.drySoil
+                                    );
+                        }
+                    }
+                });
     }
 
     /**
-     * Callback used by the UI to report whether a device slot is available,
-     * so the Add Plant screen can enable/disable Save and show a status message.
+     * Callback used by the UI to report whether
+     * a device slot is available.
      */
     public interface AddPlantCallback {
         void onSuccess(String plantId);
         void onError(String message);
     }
 
-    public void addPlant(String plantName, String slotId, PlantSettingsManager.ThresholdProfile profile, AddPlantCallback callback) {
-        DatabaseReference plantRef = databaseReference.child(slotId);
+    public void addPlant(
+            String plantName,
+            PlantSettingsManager.ThresholdProfile profile,
+            AddPlantCallback callback
+    ) {
 
-        plantRef.child("name").setValue(plantName);
-        plantRef.child("moisture_level").setValue(0);
-        plantRef.child("water_level").setValue("Unknown");
+        // Use plant name (sanitized) as the key directly.
+        String plantId =
+                plantName
+                        .replaceAll(
+                                "[^a-zA-Z0-9]",
+                                "_"
+                        )
+                        .toLowerCase();
 
-        // Mark as taken for hardware slot logic
-        plantRef.child("taken").setValue(1);
+        DatabaseReference plantRef =
+                databaseReference.child(plantId);
 
-        String nowStr = firmwareDateFormat.format(new Date());
-        plantRef.child("last_time").setValue(nowStr);
+        plantRef
+                .child("name")
+                .setValue(plantName);
 
-        plantRef.child("threshold_profile").setValue(profile.id);
-        // Push the RAW numeric value directly to Firebase for the ESP32 hardware to use
-        plantRef.child("threshold").setValue(profile.drySoil);
+        plantRef
+                .child("moisture_level")
+                .setValue(0);
+
+        plantRef
+                .child("water_level")
+                .setValue("Unknown");
+
+        // Mark as taken for hardware slot logic.
+        plantRef
+                .child("taken")
+                .setValue(1);
+
+        String nowStr =
+                firmwareDateFormat.format(
+                        new Date()
+                );
+
+        plantRef
+                .child("last_time")
+                .setValue(nowStr);
+
+        plantRef
+                .child("threshold_profile")
+                .setValue(profile.id);
+
+        plantRef
+                .child("threshold")
+                .setValue(profile.drySoil);
 
         // Initialize Manual Watering Fields
-        plantRef.child("water_pump_state").setValue(false);
-        plantRef.child("manual_watering_duration").setValue(3);
-        plantRef.child("auto_watering_mode").setValue(true);
+        plantRef
+                .child("water_pump_state")
+                .setValue(false);
+
+        plantRef
+                .child("manual_watering_duration")
+                .setValue(3);
+
+        plantRef
+                .child("auto_watering_mode")
+                .setValue(true);
+
         plantRef
                 .child("watering_log")
                 .child("placeholder")
                 .setValue(0);
 
-        if (callback != null) callback.onSuccess(slotId);
+        if (callback != null) {
+            callback.onSuccess(plantId);
+        }
     }
 
-    // Removed claimSlotAndFillPlant as it's no longer needed without slot/taken logic
+    public void requestManualWatering(
+            String plantId,
+            int duration
+    ) {
 
-    public void requestManualWatering(String plantId, int duration) {
-        DatabaseReference plantRef = databaseReference.child(plantId);
-        plantRef.child("manual_watering_duration").setValue(duration);
-        plantRef.child("water_pump_state").setValue(true);
+        DatabaseReference plantRef =
+                databaseReference.child(plantId);
+
+        plantRef
+                .child("manual_watering_duration")
+                .setValue(duration);
+
+        plantRef
+                .child("water_pump_state")
+                .setValue(true);
     }
 
-    public void stopManualWatering(String plantId) {
-        databaseReference.child(plantId).child("water_pump_state").setValue(false);
+    public void stopManualWatering(
+            String plantId
+    ) {
+
+        databaseReference
+                .child(plantId)
+                .child("water_pump_state")
+                .setValue(false);
     }
 
-    public void setAutoWateringMode(String plantId, boolean enabled) {
-        DatabaseReference plantRef = databaseReference.child(plantId);
-        plantRef.child("auto_watering_mode").setValue(enabled);
+    public void setAutoWateringMode(
+            String plantId,
+            boolean enabled
+    ) {
+
+        DatabaseReference plantRef =
+                databaseReference.child(plantId);
+
+        plantRef
+                .child("auto_watering_mode")
+                .setValue(enabled);
+    }
+
+    /**
+     * Saves or replaces the Cloudinary image URL
+     * for an existing plant.
+     */
+    public void updatePlantImage(
+            String plantId,
+            String imageUrl
+    ) {
+
+        databaseReference
+                .child(plantId)
+                .child("image_url")
+                .setValue(imageUrl);
     }
 
     /**
      * Deletes the plant node entirely.
      */
-    public void deletePlant(String plantId) {
-        databaseReference.child(plantId).removeValue();
+    public void deletePlant(
+            String plantId
+    ) {
+
+        databaseReference
+                .child(plantId)
+                .removeValue();
     }
 
     public void activateConnectionPortal() {
         DatabaseReference portalRef = FirebaseDatabase.getInstance().getReference("connection_portal");
         portalRef.setValue(true);
-        
+
         // Listen for when it's reset to false by the hardware
         portalRef.addValueEventListener(new ValueEventListener() {
             @Override

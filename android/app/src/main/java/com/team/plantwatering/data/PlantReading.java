@@ -22,6 +22,9 @@ public class PlantReading implements Parcelable {
     private final boolean isPumpActive;
     private final boolean isTaken;
 
+    // Plant image stored as Cloudinary URL
+    private final String imageUrl;
+
     public PlantReading(
             String identifier,
             String plantName,
@@ -35,7 +38,8 @@ public class PlantReading implements Parcelable {
             String wateringMode,
             boolean isPumpActive,
             boolean autoWateringEnabled,
-            boolean isTaken
+            boolean isTaken,
+            String imageUrl
     ) {
         this.identifier = identifier;
         this.plantName = plantName;
@@ -50,6 +54,7 @@ public class PlantReading implements Parcelable {
         this.isPumpActive = isPumpActive;
         this.autoWateringEnabled = autoWateringEnabled;
         this.isTaken = isTaken;
+        this.imageUrl = imageUrl;
     }
 
     protected PlantReading(Parcel in) {
@@ -66,6 +71,7 @@ public class PlantReading implements Parcelable {
         isPumpActive = in.readByte() != 0;
         autoWateringEnabled = in.readByte() != 0;
         isTaken = in.readByte() != 0;
+        imageUrl = in.readString();
     }
 
     public static final Creator<PlantReading> CREATOR = new Creator<PlantReading>() {
@@ -141,6 +147,10 @@ public class PlantReading implements Parcelable {
         return isTaken;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -161,5 +171,6 @@ public class PlantReading implements Parcelable {
         dest.writeByte((byte) (isPumpActive ? 1 : 0));
         dest.writeByte((byte) (autoWateringEnabled ? 1 : 0));
         dest.writeByte((byte) (isTaken ? 1 : 0));
+        dest.writeString(imageUrl);
     }
 }
