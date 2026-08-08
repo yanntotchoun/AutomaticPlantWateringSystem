@@ -39,6 +39,8 @@ public class PlantMonitoringService extends Service {
 
     private DatabaseReference databaseReference;
     private ValueEventListener plantsListener;
+    private ValueEventListener globalLastTimeListener;
+    private long globalLastSeenMillis = 0L;
     private PlantSettingsManager settingsManager;
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
     
@@ -46,6 +48,7 @@ public class PlantMonitoringService extends Service {
     private final Map<String, Integer> lastMoistureValues = new HashMap<>();
     private final Map<String, Integer> lastThresholds = new HashMap<>();
     private final Map<String, Boolean> lastOfflineStates = new HashMap<>();
+    private final Map<String, String> lastTankStates = new HashMap<>();
     private final Map<String, Long> lastAlertTimes = new HashMap<>();
 
     @Override
@@ -57,6 +60,23 @@ public class PlantMonitoringService extends Service {
         
         databaseReference = FirebaseDatabase.getInstance().getReference("plants");
         setupPlantsListener();
+        setupGlobalLastTimeListener();
+    }
+
+    private void setupGlobalLastTimeListener() {
+        globalLastTimeListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String timeStr = snapshot.getValue(String.class);
+                if (timeStr != null) {
+                    globalLastSeenMillis = parseFirmwareTimeToMillis(timeStr);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        };
+        FirebaseDatabase.getInstance().getReference("last_time").addValueEventListener(globalLastTimeListener);
     }
 
     private void setupPlantsListener() {
@@ -127,41 +147,41 @@ public class PlantMonitoringService extends Service {
                     // 2. Tank Check
                     String waterStr = plantSnapshot.child("water_level").getValue(String.class);
                     if (settingsManager.isLowTankAlertsEnabled() && waterStr != null) {
-                        // The ESP32 sends "Low" or "Empty" when water is needed.
-                        // "Sufficient" or "Full" means it's okay.
-                        if (waterStr.equalsIgnoreCase("Low") || waterStr.equalsIgnoreCase("Empty")) {
+                        String lastState = lastTankStates.get(plantId);
+                        boolean isNowLow = waterStr.equalsIgnoreCase("Low") || waterStr.equalsIgnoreCase("Empty");
+                        boolean wasLow = lastState != null && (lastState.equalsIgnoreCase("Low") || lastState.equalsIgnoreCase("Empty"));
+
+                        // Only notify when it first becomes low/empty
+                        if (isNowLow && !wasLow) {
                             sendInstantNotification(plantId.hashCode() + 2,
                                 "Low Water Tank: " + plantName,
                                 "The water tank needs a refill.",
                                 "tank_" + plantId);
                         }
+                        lastTankStates.put(plantId, waterStr);
                     }
 
                     // 3. Disconnection Check
-                    String timeStr = plantSnapshot.child("last_time").getValue(String.class);
-                    if (settingsManager.isDisconnectionAlertsEnabled() && timeStr != null) {
-                        long lastSeen = parseFirmwareTimeToMillis(timeStr);
-                        if (lastSeen > 0) {
-                            boolean isCurrentlyOffline = (currentServerTime - lastSeen) > 120_000L;
-                            Boolean wasOffline = lastOfflineStates.get(plantId);
+                    if (settingsManager.isDisconnectionAlertsEnabled() && globalLastSeenMillis > 0) {
+                        boolean isCurrentlyOffline = (currentServerTime - globalLastSeenMillis) > 120_000L;
+                        Boolean wasOffline = lastOfflineStates.get(plantId);
                             
-                            if (isCurrentlyOffline) {
-                                // Only notify if it was previously online (or first time seeing it)
-                                if (wasOffline == null || !wasOffline) {
-                                    Log.d(TAG, "Device " + plantName + " just went OFFLINE");
-                                    sendInstantNotification(plantId.hashCode() + 3,
-                                        "Device Offline: " + plantName,
-                                        "The device hasn't been seen for over 2 minutes.",
-                                        "offline_" + plantId);
-                                }
-                                lastOfflineStates.put(plantId, true);
-                            } else {
-                                // Device is online, clear the offline state
-                                if (wasOffline != null && wasOffline) {
-                                    Log.d(TAG, "Device " + plantName + " is back ONLINE");
-                                }
-                                lastOfflineStates.put(plantId, false);
+                        if (isCurrentlyOffline) {
+                            // Only notify if it was previously online (or first time seeing it)
+                            if (wasOffline == null || !wasOffline) {
+                                Log.d(TAG, "Device " + plantName + " just went OFFLINE");
+                                sendInstantNotification(plantId.hashCode() + 3,
+                                    "Device Offline: " + plantName,
+                                    "The device hasn't been seen for over 2 minutes.",
+                                    "offline_" + plantId);
                             }
+                            lastOfflineStates.put(plantId, true);
+                        } else {
+                            // Device is online, clear the offline state
+                            if (wasOffline != null && wasOffline) {
+                                Log.d(TAG, "Device " + plantName + " is back ONLINE");
+                            }
+                            lastOfflineStates.put(plantId, false);
                         }
                     }
                 }
@@ -262,6 +282,9 @@ public class PlantMonitoringService extends Service {
     public void onDestroy() {
         if (databaseReference != null && plantsListener != null) {
             databaseReference.removeEventListener(plantsListener);
+        }
+        if (globalLastTimeListener != null) {
+            FirebaseDatabase.getInstance().getReference("last_time").removeEventListener(globalLastTimeListener);
         }
         super.onDestroy();
     }

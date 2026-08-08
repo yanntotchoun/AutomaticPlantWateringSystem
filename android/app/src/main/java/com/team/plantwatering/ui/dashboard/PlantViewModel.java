@@ -53,6 +53,7 @@ public class PlantViewModel extends ViewModel {
 
     private long serverTimeOffset = 0;
     private String lastNamesList = null;
+    private long globalLastSeenMillis = 0L;
 
     public PlantViewModel() {
 
@@ -65,6 +66,7 @@ public class PlantViewModel extends ViewModel {
 
         listenForServerTimeOffset();
         listenForFirebaseConnection();
+        listenForGlobalLastTime();
     }
 
     private void listenForFirebaseConnection() {
@@ -141,6 +143,49 @@ public class PlantViewModel extends ViewModel {
                             }
                         }
                 );
+    }
+
+    private void listenForGlobalLastTime() {
+        FirebaseDatabase.getInstance()
+                .getReference("last_time")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String timeStr = snapshot.getValue(String.class);
+                        if (timeStr != null) {
+                            globalLastSeenMillis = parseFirmwareTimeToMillis(timeStr);
+                            
+                            // Re-bind current plants with new lastSeen time if list is already loaded
+                            List<PlantReading> currentPlants = plantsLiveData.getValue();
+                            if (currentPlants != null && !currentPlants.isEmpty()) {
+                                List<PlantReading> updated = new ArrayList<>();
+                                for (PlantReading p : currentPlants) {
+                                    updated.add(new PlantReading(
+                                            p.getIdentifier(),
+                                            p.getPlantName(),
+                                            p.getSoilHumidity(),
+                                            p.getWaterTank(),
+                                            p.getLastWateredTimeMillis(),
+                                            p.getThresholdId(),
+                                            globalLastSeenMillis,
+                                            p.isManualWateringCommand(),
+                                            p.getManualWateringDuration(),
+                                            p.getWateringMode(),
+                                            p.isPumpActive(),
+                                            p.isAutoWateringEnabled(),
+                                            p.isTaken(),
+                                            p.getSensorIndex(),
+                                            p.getImageUrl()
+                                    ));
+                                }
+                                plantsLiveData.setValue(updated);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
     }
 
     public long getCurrentServerTime() {
@@ -441,9 +486,9 @@ public class PlantViewModel extends ViewModel {
                                             name,
                                             h,
                                             w,
-                                            lw,
+                                            lw, // lastWateredTimeMillis
                                             thresholdProfileId,
-                                            lw,
+                                            globalLastSeenMillis, // lastSeenMillis from root last_time
                                             mc,
                                             md,
                                             sm,

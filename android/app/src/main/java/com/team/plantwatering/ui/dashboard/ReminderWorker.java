@@ -59,11 +59,14 @@ public class ReminderWorker extends Worker {
         }
 
         try {
-            DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("plants");
-            // Synchronously fetch data from Firebase (safe because WorkManager runs on background thread)
-            DataSnapshot snapshot = Tasks.await(dbRef.get(), 10, TimeUnit.SECONDS);
+            // Fetch root snapshot to get both plants and global last_time
+            DataSnapshot rootSnapshot = Tasks.await(FirebaseDatabase.getInstance().getReference().get(), 10, TimeUnit.SECONDS);
+            DataSnapshot plantsSnapshot = rootSnapshot.child("plants");
+            
+            String globalTimeStr = rootSnapshot.child("last_time").getValue(String.class);
+            long globalLastSeen = parseFirmwareTimeToMillis(globalTimeStr);
 
-            for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
+            for (DataSnapshot plantSnapshot : plantsSnapshot.getChildren()) {
                 String key = plantSnapshot.getKey();
                 if (key == null || key.startsWith(".") || key.equals("logs")) continue;
 
@@ -80,14 +83,9 @@ public class ReminderWorker extends Worker {
 
                 String profileId = plantSnapshot.child("threshold_profile").getValue(String.class);
 
-                // last_time is a formatted date String, not raw millis - parse it the
-                // same way PlantViewModel.parseFirmwareTimeToMillis does.
-                String timeStr = plantSnapshot.child("last_time").getValue(String.class);
-                Long lastSeen = parseFirmwareTimeToMillis(timeStr);
-
-                // Check Disconnection
-                if (settingsManager.isDisconnectionAlertsEnabled() && lastSeen > 0L) {
-                    if ((System.currentTimeMillis() - lastSeen) > 600_000L) { // 10 minutes threshold
+                // Check Disconnection using global last_time
+                if (settingsManager.isDisconnectionAlertsEnabled() && globalLastSeen > 0L) {
+                    if ((System.currentTimeMillis() - globalLastSeen) > 600_000L) { // 10 minutes threshold
                         sendNotification(
                                 plantName.hashCode() + 3,
                                 "Device Offline: " + plantName,
@@ -110,13 +108,14 @@ public class ReminderWorker extends Worker {
                 }
 
                 // Check Tank
-                // Alerts if the water status matches the trigger string (e.g. "Low")
-                if (settingsManager.isLowTankAlertsEnabled() && waterStr != null && waterStr.contains(profile.fullTank)) {
-                    sendNotification(
-                            plantName.hashCode() + 2,
-                            "Low Water Tank: " + plantName,
-                            "The water tank needs a refill."
-                    );
+                if (settingsManager.isLowTankAlertsEnabled() && waterStr != null) {
+                    if (waterStr.equalsIgnoreCase("Low") || waterStr.equalsIgnoreCase("Empty")) {
+                        sendNotification(
+                                plantName.hashCode() + 2,
+                                "Low Water Tank: " + plantName,
+                                "The water tank needs a refill."
+                        );
+                    }
                 }
             }
 
