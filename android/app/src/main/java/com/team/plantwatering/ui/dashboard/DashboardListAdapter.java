@@ -235,7 +235,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
         private final LinearLayout dropletContainer;
         private final TextView humidityPercent;
         private final TextView lastSeen;
-        private final TextView lastWatered;
         private final View toggleButton;
         private final View expandableSection;
         private final ImageView bucket;
@@ -278,11 +277,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     );
 
             lastSeen =
-                    itemView.findViewById(
-                            R.id.text_last_watered
-                    );
-
-            lastWatered =
                     itemView.findViewById(
                             R.id.text_last_watered
                     );
@@ -400,13 +394,6 @@ public class DashboardListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     DashboardUtils.humidityTextColor(
                             plant.getSoilHumidity(),
                             profile.drySoil
-                    )
-            );
-
-            lastWatered.setText(
-                    DashboardUtils.formatRelativeLastWateredTime(
-                            plant.getLastWateredTimeMillis(),
-                            currentServerTime
                     )
             );
 

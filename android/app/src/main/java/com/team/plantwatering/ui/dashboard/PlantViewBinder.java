@@ -197,12 +197,9 @@ public final class PlantViewBinder {
             String waterLevel
     ) {
 
-        boolean isFull =
-                waterLevel != null
-                        && (
-                        waterLevel.contains("Sufficient")
-                                || waterLevel.contains("Full")
-                );
+        String lower = (waterLevel != null) ? waterLevel.toLowerCase() : "";
+        boolean isFull = (lower.contains("sufficient") || lower.contains("full")) 
+                          && !lower.contains("insufficient");
 
         bucketView.setImageResource(
                 isFull

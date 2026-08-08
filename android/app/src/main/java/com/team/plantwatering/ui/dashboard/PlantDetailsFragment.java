@@ -830,13 +830,13 @@ public class PlantDetailsFragment extends Fragment {
         );
 
         // -----------------------------
-        // Last watered
+        // Last seen / Connection
         // -----------------------------
 
         lastWateredText.setText(
                 DashboardUtils
-                        .formatRelativeLastWateredTime(
-                                plant.getLastWateredTimeMillis(),
+                        .formatRelativeTime(
+                                plant.getLastSeenMillis(),
                                 viewModel
                                         .getCurrentServerTime()
                         )

@@ -30,7 +30,7 @@ public class ReminderWorker extends Worker {
     private static final String TAG = "ReminderWorker";
     private static final String CHANNEL_ID = "watering_reminders";
 
-    private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.getDefault());
+    private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.US);
 
     public ReminderWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -109,7 +109,8 @@ public class ReminderWorker extends Worker {
 
                 // Check Tank
                 if (settingsManager.isLowTankAlertsEnabled() && waterStr != null) {
-                    if (waterStr.equalsIgnoreCase("Low") || waterStr.equalsIgnoreCase("Empty")) {
+                    String lower = waterStr.toLowerCase();
+                    if (lower.contains("low") || lower.contains("empty") || lower.contains("insufficient")) {
                         sendNotification(
                                 plantName.hashCode() + 2,
                                 "Low Water Tank: " + plantName,

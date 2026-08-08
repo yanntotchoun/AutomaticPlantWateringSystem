@@ -48,7 +48,7 @@ public class PlantViewModel extends ViewModel {
     private final SimpleDateFormat firmwareDateFormat =
             new SimpleDateFormat(
                     "EEEE, MMMM dd HH:mm:ss",
-                    Locale.getDefault()
+                    Locale.US
             );
 
     private long serverTimeOffset = 0;

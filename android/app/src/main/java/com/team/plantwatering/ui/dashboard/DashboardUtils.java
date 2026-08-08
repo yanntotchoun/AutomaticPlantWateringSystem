@@ -98,9 +98,12 @@ public final class DashboardUtils {
     public static int tankTextColor(String waterTank) {
         if (waterTank == null) return Color.GRAY;
         
-        if (waterTank.contains("Sufficient") || waterTank.contains("Full")) {
+        String lower = waterTank.toLowerCase();
+        if (lower.contains("insufficient")) {
+             return Color.parseColor("#C62828"); // Error red
+        } else if (lower.contains("sufficient") || lower.contains("full")) {
             return Color.parseColor("#2E7D32");
-        } else if (waterTank.contains("Low") || waterTank.contains("Medium")) {
+        } else if (lower.contains("low") || lower.contains("medium")) {
             return Color.parseColor("#B26A00");
         } else {
             return Color.parseColor("#9C1C16");
