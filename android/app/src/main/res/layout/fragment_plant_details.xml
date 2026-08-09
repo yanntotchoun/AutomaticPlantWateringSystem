@@ -241,16 +241,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginVertical="20dp"
-                    android:background="@color/divider_gray" />
+                    android:background="@color/divider_gray"
+                    android:visibility="gone" />
 
-                <!-- Watering Log -->
+                <!-- Watering Log - TEMPORARILY HIDDEN -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/watering_log_title"
                     android:textColor="@color/text_dark"
                     android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/text_watering_log_empty"
@@ -259,14 +261,16 @@
                     android:layout_marginTop="8dp"
                     android:text="@string/watering_log_empty"
                     android:textColor="@color/text_gray_777"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:visibility="gone" />
 
                 <LinearLayout
                     android:id="@+id/layout_watering_log"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:orientation="vertical" />
+                    android:orientation="vertical"
+                    android:visibility="gone" />
 
                 <View
                     android:layout_width="match_parent"

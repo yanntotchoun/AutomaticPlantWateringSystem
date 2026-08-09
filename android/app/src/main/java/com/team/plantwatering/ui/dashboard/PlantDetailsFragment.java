@@ -376,7 +376,7 @@ public class PlantDetailsFragment extends Fragment {
         // Watering log
         // -----------------------------
 
-        viewModel
+        /*viewModel
                 .getWateringLog()
                 .observe(
                         getViewLifecycleOwner(),
@@ -386,7 +386,7 @@ public class PlantDetailsFragment extends Fragment {
         viewModel.startListeningForWateringLog(
                 plant.getIdentifier()
         );
-
+*/
         startPeriodicRefreshLoop();
 
         // -----------------------------
