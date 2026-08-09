@@ -422,19 +422,38 @@ public class SettingsFragment extends BaseFragment {
     }
 
     private void scheduleOrCancelReminder(String frequency) {
+
         long intervalMillis = frequencyToMillis(frequency);
+
         if (intervalMillis == -1L) {
-            WorkManager.getInstance(requireContext()).cancelUniqueWork("watering_reminder");
+
+            WorkManager
+                    .getInstance(requireContext())
+                    .cancelUniqueWork("watering_reminder");
+
         } else {
+
             PeriodicWorkRequest reminderRequest =
-                    new PeriodicWorkRequest.Builder(ReminderWorker.class,
-                            intervalMillis, TimeUnit.MILLISECONDS)
+                    new PeriodicWorkRequest.Builder(
+                            ReminderWorker.class,
+                            intervalMillis,
+                            TimeUnit.MILLISECONDS
+                    )
+                            // Wait one full selected interval
+                            // before sending the first reminder.
+                            .setInitialDelay(
+                                    intervalMillis,
+                                    TimeUnit.MILLISECONDS
+                            )
                             .build();
 
-            WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(
-                    "watering_reminder",
-                    ExistingPeriodicWorkPolicy.UPDATE,
-                    reminderRequest);
+            WorkManager
+                    .getInstance(requireContext())
+                    .enqueueUniquePeriodicWork(
+                            "watering_reminder",
+                            ExistingPeriodicWorkPolicy.UPDATE,
+                            reminderRequest
+                    );
         }
     }
 

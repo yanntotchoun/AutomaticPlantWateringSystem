@@ -56,7 +56,7 @@ public class PlantSettingsManager {
     }
 
     public boolean isWateringRemindersEnabled() {
-        return prefs.getBoolean(KEY_WATERING_REMINDERS_ENABLED, true);
+        return prefs.getBoolean(KEY_WATERING_REMINDERS_ENABLED, false);
     }
 
     public void setWateringRemindersEnabled(boolean enabled) {
