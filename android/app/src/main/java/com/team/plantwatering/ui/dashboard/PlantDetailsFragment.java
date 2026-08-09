@@ -445,6 +445,8 @@ public class PlantDetailsFragment extends Fragment {
                             duration
                     );
 
+                    viewModel.stopAutoWateringMode(plant.getIdentifier());
+
                     if (
                             !plant.isOnline(
                                     viewModel

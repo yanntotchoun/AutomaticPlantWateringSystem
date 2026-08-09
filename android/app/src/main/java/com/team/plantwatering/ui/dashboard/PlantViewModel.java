@@ -970,6 +970,17 @@ public class PlantViewModel extends ViewModel {
                 .child("auto_watering_mode")
                 .setValue(enabled);
     }
+    public void stopAutoWateringMode(
+            String plantId
+    ) {
+
+        DatabaseReference plantRef =
+                databaseReference.child(plantId);
+
+        plantRef
+                .child("auto_watering_mode")
+                .setValue(false);
+    }
 
     /**
      * Resets a hardware slot by marking it as not taken.
