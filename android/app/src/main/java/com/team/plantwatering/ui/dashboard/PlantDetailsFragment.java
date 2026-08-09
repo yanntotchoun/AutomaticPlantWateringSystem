@@ -411,6 +411,8 @@ public class PlantDetailsFragment extends Fragment {
                             3
                     );
 
+                    viewModel.stopAutoWateringMode(plant.getIdentifier());
+
                     if (
                             !plant.isOnline(
                                     viewModel
@@ -955,15 +957,15 @@ public class PlantDetailsFragment extends Fragment {
         );
 
         waterNowButton.setEnabled(
-                true
+                !plant.isAutoWateringEnabled()
         );
 
         quickRefreshButton.setEnabled(
-                true
+                !plant.isAutoWateringEnabled()
         );
 
         durationBar.setEnabled(
-                true
+                !plant.isAutoWateringEnabled()
         );
     }
 
