@@ -39,6 +39,7 @@ public class PlantViewModel extends ViewModel {
     private ValueEventListener plantsListener;
 
     private static final int WATERING_LOG_LIMIT = 5;
+    public static final long AUTO_WATERING_REENABLE_DELAY_MILLIS = 10_000L;
 
     private final MutableLiveData<List<Long>> wateringLogLiveData =
             new MutableLiveData<>(new ArrayList<>());
@@ -981,21 +982,40 @@ public class PlantViewModel extends ViewModel {
                 .child("auto_watering_mode")
                 .setValue(enabled);
 
-        // Cancel any pending re-enable task if the user interacts with the switch
-        Runnable pendingTask = pendingReEnableTasks.remove(plantId);
+        // Cancel any previous timer for this plant
+        Runnable pendingTask =
+                pendingReEnableTasks.remove(plantId);
+
         if (pendingTask != null) {
             reEnableHandler.removeCallbacks(pendingTask);
         }
 
-        // If turned off, schedule it to turn back on in 5 seconds
+        // If disabled temporarily, turn it back on after 10 seconds
         if (!enabled) {
+
             Runnable reEnableTask = () -> {
-                Log.d(TAG, "Automatically re-enabling watering for " + plantId);
-                plantRef.child("auto_watering_mode").setValue(true);
+
+                Log.d(
+                        TAG,
+                        "Automatically re-enabling watering for " + plantId
+                );
+
+                plantRef
+                        .child("auto_watering_mode")
+                        .setValue(true);
+
                 pendingReEnableTasks.remove(plantId);
             };
-            pendingReEnableTasks.put(plantId, reEnableTask);
-            reEnableHandler.postDelayed(reEnableTask, 5000);
+
+            pendingReEnableTasks.put(
+                    plantId,
+                    reEnableTask
+            );
+
+            reEnableHandler.postDelayed(
+                    reEnableTask,
+                    AUTO_WATERING_REENABLE_DELAY_MILLIS
+            );
         }
     }
 

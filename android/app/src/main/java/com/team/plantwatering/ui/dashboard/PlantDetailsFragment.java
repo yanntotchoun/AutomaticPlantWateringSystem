@@ -279,17 +279,21 @@ public class PlantDetailsFragment extends Fragment {
                         );
 
                         if (!isChecked) {
+
                             permanentDisableButton.setVisibility(View.VISIBLE);
-                            // Hide the button again after 6 seconds because the timer would have fired or been cancelled anyway
+
                             permanentDisableButton.postDelayed(() -> {
-                                if (isAdded()) {
+
+                                if (isAdded() && permanentDisableButton != null) {
                                     permanentDisableButton.setVisibility(View.GONE);
                                 }
-                            }, 6000);
+
+                            }, PlantViewModel.AUTO_WATERING_REENABLE_DELAY_MILLIS);
+
                         } else {
+
                             permanentDisableButton.setVisibility(View.GONE);
                         }
-
                         if (
                                 !plant.isOnline(
                                         viewModel
