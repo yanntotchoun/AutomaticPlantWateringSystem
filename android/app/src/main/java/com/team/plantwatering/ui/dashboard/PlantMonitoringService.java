@@ -194,8 +194,8 @@ public class PlantMonitoringService extends Service {
 
             // 3. Disconnection Check
             if (settingsManager.isDisconnectionAlertsEnabled() && globalLastSeenMillis > 0) {
-                // Reverted to 10 minutes (600,000ms) as requested
-                boolean isCurrentlyOffline = (currentServerTime - globalLastSeenMillis) > 600_000L;
+                // Device is considered offline if not seen for over 2 minutes (120,000ms)
+                boolean isCurrentlyOffline = (currentServerTime - globalLastSeenMillis) > 120_000L;
                 Boolean wasOffline = lastOfflineStates.get(plantId);
 
                 if (isCurrentlyOffline) {
@@ -203,7 +203,7 @@ public class PlantMonitoringService extends Service {
                         Log.d(TAG, "Device " + plantName + " just went OFFLINE");
                         sendInstantNotification(plantId.hashCode() + 3,
                                 "Device Offline: " + plantName,
-                                "The device hasn't been seen for over 10 minutes.",
+                                "The device hasn't been seen for over 2 minutes.",
                                 "offline_" + plantId);
                     }
                     lastOfflineStates.put(plantId, true);

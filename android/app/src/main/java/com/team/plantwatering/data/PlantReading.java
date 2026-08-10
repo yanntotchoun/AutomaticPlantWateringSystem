@@ -124,7 +124,7 @@ public class PlantReading implements Parcelable {
 
     public boolean isOnline(long currentTimeMillis) {
         // Reverted to 10 minutes (600,000ms) as requested
-        return (currentTimeMillis - lastSeenMillis) < 600_000L;
+        return (currentTimeMillis - lastSeenMillis) < 120_000L;
     }
 
     public boolean isManualWateringCommand() {
