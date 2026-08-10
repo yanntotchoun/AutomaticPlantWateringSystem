@@ -42,7 +42,7 @@ public class PlantDetailsFragment extends Fragment {
     private static final int MAX_DURATION = 60;
     private static final int STEP = 5;
     private static final int SEEK_MAX =
-            MAX_DURATION - MIN_DURATION; // 55
+            MAX_DURATION - MIN_DURATION;
 
     private final Handler refreshHandler =
             new Handler(Looper.getMainLooper());
@@ -57,7 +57,7 @@ public class PlantDetailsFragment extends Fragment {
     private TextView durationLabel;
     private View stopWateringButton;
     private SwitchMaterial autoWateringSwitch;
-    private View permanentDisableButton;
+
     private PlantSettingsManager settingsManager;
     private PlantReading plant;
     private PlantViewModel viewModel;
@@ -65,6 +65,17 @@ public class PlantDetailsFragment extends Fragment {
     private TextView currentProfileText;
     private LinearLayout wateringLogContainer;
     private TextView wateringLogEmptyText;
+
+    // -----------------------------
+    // Local automatic watering state
+    // -----------------------------
+    //
+    // This controls the UI only.
+    //
+    // Changing the automatic watering switch does NOT
+    // write anything to Firebase.
+    //
+    private boolean autoWateringEnabledLocal = false;
 
     // Plant photo UI
     private ImageView plantImageView;
@@ -81,7 +92,9 @@ public class PlantDetailsFragment extends Fragment {
             registerForActivityResult(
                     new ActivityResultContracts.GetContent(),
                     uri -> {
+
                         if (uri != null) {
+
                             uploadPlantImage(uri);
                         }
                     }
@@ -223,11 +236,6 @@ public class PlantDetailsFragment extends Fragment {
                         R.id.switch_auto_watering
                 );
 
-        permanentDisableButton =
-                view.findViewById(
-                        R.id.button_disable_auto_permanently
-                );
-
         // -----------------------------
         // Plant photo views
         // -----------------------------
@@ -255,6 +263,16 @@ public class PlantDetailsFragment extends Fragment {
                 );
 
         // -----------------------------
+        // Initial automatic watering UI
+        // -----------------------------
+        //
+        // Read the existing value when opening the page,
+        // but changing it afterwards stays local.
+        //
+        autoWateringEnabledLocal =
+                plant.isAutoWateringEnabled();
+
+        // -----------------------------
         // Photo picker
         // -----------------------------
 
@@ -267,51 +285,25 @@ public class PlantDetailsFragment extends Fragment {
         // -----------------------------
         // Automatic watering
         // -----------------------------
-
+        //
+        // IMPORTANT:
+        //
+        // This does NOT call setAutoWateringMode().
+        // Therefore toggling this switch does not send
+        // anything to Firebase.
+        //
         autoWateringSwitch.setOnCheckedChangeListener(
                 (buttonView, isChecked) -> {
 
                     if (buttonView.isPressed()) {
 
-                        viewModel.setAutoWateringMode(
-                                plant.getIdentifier(),
-                                isChecked
-                        );
+                        autoWateringEnabledLocal =
+                                isChecked;
 
-                        if (!isChecked) {
-
-                            permanentDisableButton.setVisibility(View.VISIBLE);
-
-                            permanentDisableButton.postDelayed(() -> {
-
-                                if (isAdded() && permanentDisableButton != null) {
-                                    permanentDisableButton.setVisibility(View.GONE);
-                                }
-
-                            }, PlantViewModel.AUTO_WATERING_REENABLE_DELAY_MILLIS);
-
-                        } else {
-
-                            permanentDisableButton.setVisibility(View.GONE);
-                        }
-                        if (
-                                !plant.isOnline(
-                                        viewModel
-                                                .getCurrentServerTime()
-                                )
-                        ) {
-
-                            showOfflinePendingToast();
-                        }
+                        updateManualWateringControls();
                     }
                 }
         );
-
-        permanentDisableButton.setOnClickListener(v -> {
-            viewModel.cancelAutoWateringTimer(plant.getIdentifier());
-            permanentDisableButton.setVisibility(View.GONE);
-            Toast.makeText(requireContext(), "Automatic watering disabled permanently", Toast.LENGTH_SHORT).show();
-        });
 
         // -----------------------------
         // Duration SeekBar
@@ -403,7 +395,8 @@ public class PlantDetailsFragment extends Fragment {
         // Watering log
         // -----------------------------
 
-        /*viewModel
+        /*
+        viewModel
                 .getWateringLog()
                 .observe(
                         getViewLifecycleOwner(),
@@ -413,7 +406,8 @@ public class PlantDetailsFragment extends Fragment {
         viewModel.startListeningForWateringLog(
                 plant.getIdentifier()
         );
-*/
+        */
+
         startPeriodicRefreshLoop();
 
         // -----------------------------
@@ -432,6 +426,15 @@ public class PlantDetailsFragment extends Fragment {
 
         quickRefreshButton.setOnClickListener(
                 v -> {
+
+                    /*
+                     * Extra safety:
+                     * do nothing if automatic watering
+                     * is enabled locally.
+                     */
+                    if (autoWateringEnabledLocal) {
+                        return;
+                    }
 
                     viewModel.requestManualWatering(
                             plant.getIdentifier(),
@@ -457,6 +460,15 @@ public class PlantDetailsFragment extends Fragment {
         waterNowButton.setOnClickListener(
                 v -> {
 
+                    /*
+                     * Extra safety:
+                     * automatic watering disables
+                     * manual watering.
+                     */
+                    if (autoWateringEnabledLocal) {
+                        return;
+                    }
+
                     int duration =
                             MIN_DURATION
                                     + (
@@ -471,6 +483,7 @@ public class PlantDetailsFragment extends Fragment {
                             plant.getIdentifier(),
                             duration
                     );
+                    viewModel.stopAutoWateringMode(plant.getIdentifier());
 
                     if (
                             !plant.isOnline(
@@ -482,6 +495,7 @@ public class PlantDetailsFragment extends Fragment {
                         showOfflinePendingToast();
                     }
                 }
+
         );
 
         stopWateringButton.setOnClickListener(
@@ -649,12 +663,6 @@ public class PlantDetailsFragment extends Fragment {
                                                                 true
                                                         );
 
-                                                /*
-                                                 * If there was already
-                                                 * a photo, this will be
-                                                 * corrected again by
-                                                 * updateUi().
-                                                 */
                                                 changePhotoButton
                                                         .setText(
                                                                 "Add photo"
@@ -681,8 +689,6 @@ public class PlantDetailsFragment extends Fragment {
 
         super.onPause();
 
-        // Clear all callbacks to prevent leaks
-        // or dead-thread issues.
         refreshHandler
                 .removeCallbacksAndMessages(
                         null
@@ -937,9 +943,13 @@ public class PlantDetailsFragment extends Fragment {
         // -----------------------------
         // Automatic watering
         // -----------------------------
-
+        //
+        // IMPORTANT:
+        //
+        // Use LOCAL state instead of Firebase state.
+        //
         autoWateringSwitch.setChecked(
-                plant.isAutoWateringEnabled()
+                autoWateringEnabledLocal
         );
 
         // -----------------------------
@@ -979,16 +989,38 @@ public class PlantDetailsFragment extends Fragment {
                         : View.GONE
         );
 
+        // Grey out / disable manual controls
+        // while automatic watering is enabled.
+        updateManualWateringControls();
+    }
+
+    /*
+     * Enables or disables manual watering UI
+     * depending on the LOCAL automatic watering state.
+     */
+    private void updateManualWateringControls() {
+
+        if (
+                waterNowButton == null
+                        || quickRefreshButton == null
+                        || durationBar == null
+        ) {
+            return;
+        }
+
+        boolean manualEnabled =
+                !autoWateringEnabledLocal;
+
         waterNowButton.setEnabled(
-                !plant.isAutoWateringEnabled()
+                manualEnabled
         );
 
         quickRefreshButton.setEnabled(
-                !plant.isAutoWateringEnabled()
+                manualEnabled
         );
 
         durationBar.setEnabled(
-                !plant.isAutoWateringEnabled()
+                manualEnabled
         );
     }
 
