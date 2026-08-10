@@ -411,8 +411,6 @@ public class PlantDetailsFragment extends Fragment {
                             3
                     );
 
-                    viewModel.stopAutoWateringMode(plant.getIdentifier());
-
                     if (
                             !plant.isOnline(
                                     viewModel
@@ -446,8 +444,6 @@ public class PlantDetailsFragment extends Fragment {
                             plant.getIdentifier(),
                             duration
                     );
-
-                    viewModel.stopAutoWateringMode(plant.getIdentifier());
 
                     if (
                             !plant.isOnline(

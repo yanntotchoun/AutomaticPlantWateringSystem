@@ -46,6 +46,8 @@ public class PlantMonitoringService extends Service {
     private PlantSettingsManager settingsManager;
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.US);
     
+    private boolean isInitialProcessing = true;
+
     private final Handler statusCheckHandler = new Handler(Looper.getMainLooper());
     private final Runnable statusCheckRunnable = new Runnable() {
         @Override
@@ -116,7 +118,7 @@ public class PlantMonitoringService extends Service {
     private void processPlantsSnapshot(DataSnapshot snapshot) {
         if (!snapshot.exists()) return;
         
-        Log.d(TAG, "Processing snapshot with " + snapshot.getChildrenCount() + " plants");
+        Log.d(TAG, "Processing snapshot with " + snapshot.getChildrenCount() + " plants. Initial: " + isInitialProcessing);
         if (!settingsManager.isNotificationsEnabled()) {
             return;
         }
@@ -140,14 +142,11 @@ public class PlantMonitoringService extends Service {
             
             if (moisture != null && profileId != null) {
                 PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(profileId);
-                
+
                 Integer lastValue = lastMoistureValues.get(plantId);
                 Integer lastThreshold = lastThresholds.get(plantId);
-                
-                lastMoistureValues.put(plantId, moisture);
-                lastThresholds.put(plantId, profile.drySoil);
 
-                if (settingsManager.isLowHumidityAlertsEnabled()) {
+                if (settingsManager.isLowHumidityAlertsEnabled() && !isInitialProcessing) {
                     if (moisture < profile.drySoil) {
                         boolean isNewThreshold = lastThreshold != null && profile.drySoil != lastThreshold;
                         boolean moistureDropped = lastValue != null && moisture < lastValue;
@@ -161,6 +160,9 @@ public class PlantMonitoringService extends Service {
                         }
                     }
                 }
+                
+                lastMoistureValues.put(plantId, moisture);
+                lastThresholds.put(plantId, profile.drySoil);
             }
 
             // 2. Tank Check
@@ -176,11 +178,11 @@ public class PlantMonitoringService extends Service {
                     wasLow = lowerLast.contains("low") || lowerLast.contains("empty") || lowerLast.contains("insufficient");
                 }
 
-                if (isNowLow && !wasLow) {
+                if (isNowLow && !wasLow && !isInitialProcessing) {
                     sendInstantNotification(plantId.hashCode() + 2,
-                        "Low Water Tank: " + plantName,
-                        "The water tank needs a refill.",
-                        "tank_" + plantId);
+                            "Water Level Low: " + plantName,
+                            "The water tank is " + waterStr + ". Please refill it.",
+                            "tank_" + plantId);
                 }
                 lastTankStates.put(plantId, waterStr);
             }
@@ -190,9 +192,9 @@ public class PlantMonitoringService extends Service {
                 // Reverted to 10 minutes (600,000ms) as requested
                 boolean isCurrentlyOffline = (currentServerTime - globalLastSeenMillis) > 600_000L;
                 Boolean wasOffline = lastOfflineStates.get(plantId);
-                    
+
                 if (isCurrentlyOffline) {
-                    if (wasOffline == null || !wasOffline) {
+                    if ((wasOffline == null || !wasOffline) && !isInitialProcessing) {
                         Log.d(TAG, "Device " + plantName + " just went OFFLINE");
                         sendInstantNotification(plantId.hashCode() + 3,
                             "Device Offline: " + plantName,
@@ -204,6 +206,12 @@ public class PlantMonitoringService extends Service {
                     lastOfflineStates.put(plantId, false);
                 }
             }
+        }
+
+        // After the first full pass where we actually had the time data, stop skipping notifications
+        if (isInitialProcessing && globalLastSeenMillis > 0) {
+            Log.d(TAG, "Initial state captured for all plants. Monitoring for changes now.");
+            isInitialProcessing = false;
         }
     }
 
@@ -282,6 +290,10 @@ public class PlantMonitoringService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && ACTION_REFRESH_SETTINGS.equals(intent.getAction())) {
+            Log.d(TAG, "Refreshing settings and checking status");
+            checkPlantStatus();
+        }
         return START_STICKY;
     }
 

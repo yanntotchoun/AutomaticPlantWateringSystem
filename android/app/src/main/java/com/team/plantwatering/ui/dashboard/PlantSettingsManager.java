@@ -15,6 +15,7 @@ public class PlantSettingsManager {
 
     private static final String KEY_PROFILE_IDS = "profile_ids";
     private static final String KEY_REMINDER_FREQUENCY = "reminder_frequency";
+    private static final String KEY_PROFILES_INITIALIZED = "profiles_initialized";
 
     private final SharedPreferences prefs;
 
@@ -151,9 +152,12 @@ public class PlantSettingsManager {
                 .remove("threshold_dry_" + id)
                 .remove("threshold_tank_" + id);
 
-        java.util.Set<String> ids = new java.util.HashSet<>(prefs.getStringSet(KEY_PROFILE_IDS, new java.util.HashSet<>()));
-        if (ids.remove(id)) {
-            editor.putStringSet(KEY_PROFILE_IDS, ids);
+        java.util.Set<String> currentIds = prefs.getStringSet(KEY_PROFILE_IDS, null);
+        if (currentIds != null) {
+            java.util.Set<String> ids = new java.util.HashSet<>(currentIds);
+            if (ids.remove(id)) {
+                editor.putStringSet(KEY_PROFILE_IDS, ids);
+            }
         }
         editor.apply();
     }
@@ -162,20 +166,22 @@ public class PlantSettingsManager {
         java.util.List<ThresholdProfile> profiles = new java.util.ArrayList<>();
         profiles.add(getDefaultProfile());
         
-        java.util.Set<String> ids = prefs.getStringSet(KEY_PROFILE_IDS, new java.util.HashSet<>());
-        for (String id : ids) {
-            profiles.add(getThresholdProfile(id));
+        java.util.Set<String> ids = prefs.getStringSet(KEY_PROFILE_IDS, null);
+        if (ids != null) {
+            // Sort or handle order if needed, but for now just add
+            for (String id : ids) {
+                profiles.add(getThresholdProfile(id));
+            }
         }
         return profiles;
     }
 
     // Initialize some profiles if they don't exist
     public void initDefaultProfiles() {
-        if (!prefs.contains("threshold_name_tropical")) {
+        if (!prefs.getBoolean(KEY_PROFILES_INITIALIZED, false)) {
             saveThresholdProfile(new ThresholdProfile("tropical", "Tropical", 50, "Sufficient"));
-        }
-        if (!prefs.contains("threshold_name_succulent")) {
             saveThresholdProfile(new ThresholdProfile("succulent", "Succulent", 15, "Low"));
+            prefs.edit().putBoolean(KEY_PROFILES_INITIALIZED, true).apply();
         }
     }
 }
