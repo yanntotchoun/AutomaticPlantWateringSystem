@@ -1,5 +1,9 @@
 package com.team.plantwatering.ui.dashboard;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -9,6 +13,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.team.plantwatering.data.PlantReading;
 
@@ -17,14 +22,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-
-import com.google.firebase.database.Query;
-
+import java.util.Map;
 import java.util.Collections;
-
-import android.util.Log;
 
 public class PlantViewModel extends ViewModel {
 
@@ -54,6 +56,9 @@ public class PlantViewModel extends ViewModel {
     private long serverTimeOffset = 0;
     private String lastNamesList = null;
     private long globalLastSeenMillis = 0L;
+
+    private final Handler reEnableHandler = new Handler(Looper.getMainLooper());
+    private final Map<String, Runnable> pendingReEnableTasks = new HashMap<>();
 
     public PlantViewModel() {
 
@@ -553,6 +558,12 @@ public class PlantViewModel extends ViewModel {
         }
 
         stopListeningForWateringLog();
+
+        // Clean up pending timers
+        for (Runnable task : pendingReEnableTasks.values()) {
+            reEnableHandler.removeCallbacks(task);
+        }
+        pendingReEnableTasks.clear();
     }
 
     private void updatePlantNamesNode(
@@ -969,6 +980,31 @@ public class PlantViewModel extends ViewModel {
         plantRef
                 .child("auto_watering_mode")
                 .setValue(enabled);
+
+        // Cancel any pending re-enable task if the user interacts with the switch
+        Runnable pendingTask = pendingReEnableTasks.remove(plantId);
+        if (pendingTask != null) {
+            reEnableHandler.removeCallbacks(pendingTask);
+        }
+
+        // If turned off, schedule it to turn back on in 5 seconds
+        if (!enabled) {
+            Runnable reEnableTask = () -> {
+                Log.d(TAG, "Automatically re-enabling watering for " + plantId);
+                plantRef.child("auto_watering_mode").setValue(true);
+                pendingReEnableTasks.remove(plantId);
+            };
+            pendingReEnableTasks.put(plantId, reEnableTask);
+            reEnableHandler.postDelayed(reEnableTask, 5000);
+        }
+    }
+
+    public void cancelAutoWateringTimer(String plantId) {
+        Runnable pendingTask = pendingReEnableTasks.remove(plantId);
+        if (pendingTask != null) {
+            Log.d(TAG, "Canceled automatic re-enablement for " + plantId);
+            reEnableHandler.removeCallbacks(pendingTask);
+        }
     }
     public void stopAutoWateringMode(
             String plantId

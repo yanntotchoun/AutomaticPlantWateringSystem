@@ -352,6 +352,17 @@
                     android:textSize="16sp"
                     app:useMaterialThemeColors="true" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_disable_auto_permanently"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disable permanently (cancel timer)"
+                    android:textAllCaps="false"
+                    android:textColor="#9C1C16"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
                 <LinearLayout
                     android:id="@+id/layout_manual_controls"
                     android:layout_width="match_parent"

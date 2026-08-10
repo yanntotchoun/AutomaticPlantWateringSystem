@@ -57,7 +57,7 @@ public class PlantDetailsFragment extends Fragment {
     private TextView durationLabel;
     private View stopWateringButton;
     private SwitchMaterial autoWateringSwitch;
-
+    private View permanentDisableButton;
     private PlantSettingsManager settingsManager;
     private PlantReading plant;
     private PlantViewModel viewModel;
@@ -223,6 +223,11 @@ public class PlantDetailsFragment extends Fragment {
                         R.id.switch_auto_watering
                 );
 
+        permanentDisableButton =
+                view.findViewById(
+                        R.id.button_disable_auto_permanently
+                );
+
         // -----------------------------
         // Plant photo views
         // -----------------------------
@@ -273,6 +278,18 @@ public class PlantDetailsFragment extends Fragment {
                                 isChecked
                         );
 
+                        if (!isChecked) {
+                            permanentDisableButton.setVisibility(View.VISIBLE);
+                            // Hide the button again after 6 seconds because the timer would have fired or been cancelled anyway
+                            permanentDisableButton.postDelayed(() -> {
+                                if (isAdded()) {
+                                    permanentDisableButton.setVisibility(View.GONE);
+                                }
+                            }, 6000);
+                        } else {
+                            permanentDisableButton.setVisibility(View.GONE);
+                        }
+
                         if (
                                 !plant.isOnline(
                                         viewModel
@@ -285,6 +302,12 @@ public class PlantDetailsFragment extends Fragment {
                     }
                 }
         );
+
+        permanentDisableButton.setOnClickListener(v -> {
+            viewModel.cancelAutoWateringTimer(plant.getIdentifier());
+            permanentDisableButton.setVisibility(View.GONE);
+            Toast.makeText(requireContext(), "Automatic watering disabled permanently", Toast.LENGTH_SHORT).show();
+        });
 
         // -----------------------------
         // Duration SeekBar
