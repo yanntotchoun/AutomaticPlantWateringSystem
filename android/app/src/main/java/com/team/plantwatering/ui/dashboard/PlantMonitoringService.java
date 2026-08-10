@@ -45,7 +45,7 @@ public class PlantMonitoringService extends Service {
     private long globalLastSeenMillis = 0L;
     private PlantSettingsManager settingsManager;
     private final SimpleDateFormat firmwareDateFormat = new SimpleDateFormat("EEEE, MMMM dd HH:mm:ss", Locale.US);
-    
+
     private boolean isInitialProcessing = true;
 
     private final Handler statusCheckHandler = new Handler(Looper.getMainLooper());
@@ -60,6 +60,7 @@ public class PlantMonitoringService extends Service {
     // To track last values and states to avoid redundant notifications
     private final Map<String, Integer> lastMoistureValues = new HashMap<>();
     private final Map<String, Integer> lastThresholds = new HashMap<>();
+    private final Map<String, Boolean> lastBelowThresholdStates = new HashMap<>();
     private final Map<String, Boolean> lastOfflineStates = new HashMap<>();
     private final Map<String, String> lastTankStates = new HashMap<>();
 
@@ -69,11 +70,11 @@ public class PlantMonitoringService extends Service {
         settingsManager = new PlantSettingsManager(this);
         createNotificationChannels();
         startForeground(ONGOING_NOTIFICATION_ID, createOngoingNotification());
-        
+
         databaseReference = FirebaseDatabase.getInstance().getReference("plants");
         setupPlantsListener();
         setupGlobalLastTimeListener();
-        
+
         statusCheckHandler.post(statusCheckRunnable);
     }
 
@@ -117,14 +118,14 @@ public class PlantMonitoringService extends Service {
 
     private void processPlantsSnapshot(DataSnapshot snapshot) {
         if (!snapshot.exists()) return;
-        
+
         Log.d(TAG, "Processing snapshot with " + snapshot.getChildrenCount() + " plants. Initial: " + isInitialProcessing);
         if (!settingsManager.isNotificationsEnabled()) {
             return;
         }
 
         long currentServerTime = System.currentTimeMillis();
-        
+
         for (DataSnapshot plantSnapshot : snapshot.getChildren()) {
             String plantId = plantSnapshot.getKey();
             if (plantId == null || plantId.startsWith(".") || plantId.equals("logs")) continue;
@@ -137,30 +138,34 @@ public class PlantMonitoringService extends Service {
             if (plantName == null) plantName = plantId;
 
             // 1. Humidity / Moisture Check
+            //
+            // Edge-triggered: notify only the moment moisture crosses
+            // from "at/above threshold" to "below threshold" (or the
+            // threshold itself moves down past the current moisture).
+            // Do NOT notify on every incremental drop while already
+            // below the threshold - that fires repeatedly as soil
+            // keeps naturally drying out or the sensor reading drifts.
             Integer moisture = parseSafeInt(plantSnapshot.child("moisture_level").getValue());
             String profileId = plantSnapshot.child("threshold_profile").getValue(String.class);
-            
+
             if (moisture != null && profileId != null) {
                 PlantSettingsManager.ThresholdProfile profile = settingsManager.getThresholdProfile(profileId);
 
-                Integer lastValue = lastMoistureValues.get(plantId);
-                Integer lastThreshold = lastThresholds.get(plantId);
+                boolean isNowBelow = moisture < profile.drySoil;
+                Boolean wasBelow = lastBelowThresholdStates.get(plantId);
 
                 if (settingsManager.isLowHumidityAlertsEnabled() && !isInitialProcessing) {
-                    if (moisture < profile.drySoil) {
-                        boolean isNewThreshold = lastThreshold != null && profile.drySoil != lastThreshold;
-                        boolean moistureDropped = lastValue != null && moisture < lastValue;
-                        boolean isInitialCheck = lastValue == null;
+                    boolean justCrossedBelow = isNowBelow && (wasBelow == null || !wasBelow);
 
-                        if (moistureDropped || isNewThreshold || isInitialCheck) {
-                            sendInstantNotification(plantId.hashCode() + 1, 
-                                "Thirsty Plant: " + plantName, 
+                    if (justCrossedBelow) {
+                        sendInstantNotification(plantId.hashCode() + 1,
+                                "Thirsty Plant: " + plantName,
                                 "Humidity is at " + moisture + "%, which is below the " + profile.name + " threshold (" + profile.drySoil + "%).",
                                 "humidity_" + plantId);
-                        }
                     }
                 }
-                
+
+                lastBelowThresholdStates.put(plantId, isNowBelow);
                 lastMoistureValues.put(plantId, moisture);
                 lastThresholds.put(plantId, profile.drySoil);
             }
@@ -170,7 +175,7 @@ public class PlantMonitoringService extends Service {
             if (settingsManager.isLowTankAlertsEnabled() && waterStr != null) {
                 String lowerWater = waterStr.toLowerCase();
                 boolean isNowLow = lowerWater.contains("low") || lowerWater.contains("empty") || lowerWater.contains("insufficient");
-                
+
                 String lastState = lastTankStates.get(plantId);
                 boolean wasLow = false;
                 if (lastState != null) {
@@ -197,9 +202,9 @@ public class PlantMonitoringService extends Service {
                     if ((wasOffline == null || !wasOffline) && !isInitialProcessing) {
                         Log.d(TAG, "Device " + plantName + " just went OFFLINE");
                         sendInstantNotification(plantId.hashCode() + 3,
-                            "Device Offline: " + plantName,
-                            "The device hasn't been seen for over 10 minutes.",
-                            "offline_" + plantId);
+                                "Device Offline: " + plantName,
+                                "The device hasn't been seen for over 10 minutes.",
+                                "offline_" + plantId);
                     }
                     lastOfflineStates.put(plantId, true);
                 } else {
@@ -249,12 +254,12 @@ public class PlantMonitoringService extends Service {
     private void createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = getSystemService(NotificationManager.class);
-            
+
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID, "Monitoring Status", NotificationManager.IMPORTANCE_MIN);
             serviceChannel.setShowBadge(false);
             manager.createNotificationChannel(serviceChannel);
-            
+
             NotificationChannel alertsChannel = new NotificationChannel(
                     ALERTS_CHANNEL_ID, "Plant Alerts", NotificationManager.IMPORTANCE_HIGH);
             alertsChannel.enableVibration(true);
