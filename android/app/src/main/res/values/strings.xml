@@ -22,6 +22,8 @@
     <string name="average_tank_level">Average tank level</string>
     <string name="average_temperature">Average temperature</string>
     <string name="no_plants_found">No plants found.</string>
+    <string name="no_plants_added_yet">No plants added yet</string>
+    <string name="tap_add_plant_button_to_start_monitoring">Tap the add button to start monitoring your plants</string>
 
     <!-- Overview -->
     <string name="overview_title">Plant Overview</string>

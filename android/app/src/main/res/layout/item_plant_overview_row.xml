@@ -1,5 +1,4 @@
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_root"
@@ -12,20 +11,15 @@
     app:cardBackgroundColor="@color/card_white"
     app:cardCornerRadius="20dp"
     app:cardElevation="2dp">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="18dp">
-
-        <!-- Letter avatar + plant photo -->
         <FrameLayout
             android:layout_width="58dp"
             android:layout_height="58dp">
-
-            <!-- Fallback letter -->
             <TextView
                 android:id="@+id/text_avatar"
                 android:layout_width="match_parent"
@@ -36,8 +30,6 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:text="B" />
-
-            <!-- Cloudinary plant image -->
             <ImageView
                 android:id="@+id/image_plant_avatar"
                 android:layout_width="match_parent"
@@ -48,16 +40,13 @@
                 android:scaleType="centerCrop"
                 android:visibility="gone"
                 tools:visibility="visible" />
-
         </FrameLayout>
-
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
-
             <TextView
                 android:id="@+id/text_plant_name"
                 android:layout_width="wrap_content"
@@ -66,7 +55,6 @@
                 android:textSize="22sp"
                 android:textStyle="bold"
                 tools:text="Basil" />
-
             <TextView
                 android:id="@+id/text_humidity_tank"
                 android:layout_width="wrap_content"
@@ -75,7 +63,6 @@
                 android:textColor="@color/text_gray_555"
                 android:textSize="15sp"
                 tools:text="Humidity: 72%  |  Tank: 70%" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -83,9 +70,7 @@
                 android:text="@string/tap_to_open_details"
                 android:textColor="@color/text_gray_777"
                 android:textSize="13sp" />
-
         </LinearLayout>
-
         <TextView
             android:id="@+id/chip_status"
             android:layout_width="wrap_content"
@@ -95,14 +80,11 @@
             android:textStyle="bold"
             tools:background="@drawable/bg_chip_healthy"
             tools:text="Healthy" />
-
         <TextView
             android:id="@+id/text_connectivity_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:textStyle="bold" />
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

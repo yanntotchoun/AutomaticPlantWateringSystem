@@ -4,45 +4,27 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class PlantReading implements Parcelable {
-
-    private final String identifier; // Firebase key (e.g. "slot1")
-    private final String plantName; // Display name
+    private final String identifier;
+    private final String plantName;
     private final int soilHumidity;
     private final String waterTank;
     private final long lastWateredTimeMillis;
     private final String thresholdId;
     private final long lastSeenMillis;
-
-    // Manual Watering Control Fields (Task BSCK-8.1)
     private final boolean manualWateringCommand;
     private final int manualWateringDuration;
     private final boolean autoWateringEnabled;
-
     private final String wateringMode;
     private final boolean isPumpActive;
     private final boolean isTaken;
     private final int sensorIndex;
-
-    // Plant image stored as Cloudinary URL
     private final String imageUrl;
 
-    public PlantReading(
-            String identifier,
-            String plantName,
-            int soilHumidity,
-            String waterTank,
-            long lastWateredTimeMillis,
-            String thresholdId,
-            long lastSeenMillis,
-            boolean manualWateringCommand,
-            int manualWateringDuration,
-            String wateringMode,
-            boolean isPumpActive,
-            boolean autoWateringEnabled,
-            boolean isTaken,
-            int sensorIndex,
-            String imageUrl
-    ) {
+    public PlantReading(String identifier, String plantName, int soilHumidity, String waterTank,
+                        long lastWateredTimeMillis, String thresholdId, long lastSeenMillis,
+                        boolean manualWateringCommand, int manualWateringDuration, String wateringMode,
+                        boolean isPumpActive, boolean autoWateringEnabled, boolean isTaken,
+                        int sensorIndex, String imageUrl) {
         this.identifier = identifier;
         this.plantName = plantName;
         this.soilHumidity = soilHumidity;
@@ -79,90 +61,29 @@ public class PlantReading implements Parcelable {
     }
 
     public static final Creator<PlantReading> CREATOR = new Creator<PlantReading>() {
-        @Override
-        public PlantReading createFromParcel(Parcel in) {
-            return new PlantReading(in);
-        }
-
-        @Override
-        public PlantReading[] newArray(int size) {
-            return new PlantReading[size];
-        }
+        @Override public PlantReading createFromParcel(Parcel in) { return new PlantReading(in); }
+        @Override public PlantReading[] newArray(int size) { return new PlantReading[size]; }
     };
 
-    public String getIdentifier() {
-        return identifier;
-    }
+    public String getIdentifier() { return identifier; }
+    public String getPlantName() { return plantName; }
+    public int getSoilHumidity() { return soilHumidity; }
+    public String getWaterTank() { return waterTank; }
+    public long getLastWateredTimeMillis() { return lastWateredTimeMillis; }
+    public String getThresholdId() { return thresholdId; }
+    public long getLastSeenMillis() { return lastSeenMillis; }
+    public boolean isOnline() { return isOnline(System.currentTimeMillis()); }
+    public boolean isOnline(long currentTimeMillis) { return (currentTimeMillis - lastSeenMillis) < 120_000L; }
+    public boolean isManualWateringCommand() { return manualWateringCommand; }
+    public int getManualWateringDuration() { return manualWateringDuration; }
+    public boolean isPumpActive() { return isPumpActive; }
+    public boolean isAutoWateringEnabled() { return autoWateringEnabled; }
+    public String getWateringMode() { return wateringMode; }
+    public boolean isTaken() { return isTaken; }
+    public String getImageUrl() { return imageUrl; }
+    public int getSensorIndex() { return sensorIndex; }
 
-    public String getPlantName() {
-        return plantName;
-    }
-
-    public int getSoilHumidity() {
-        return soilHumidity;
-    }
-
-    public String getWaterTank() {
-        return waterTank;
-    }
-
-    public long getLastWateredTimeMillis() {
-        return lastWateredTimeMillis;
-    }
-
-    public String getThresholdId() {
-        return thresholdId;
-    }
-
-    public long getLastSeenMillis() {
-        return lastSeenMillis;
-    }
-
-    public boolean isOnline() {
-        return isOnline(System.currentTimeMillis());
-    }
-
-    public boolean isOnline(long currentTimeMillis) {
-        // Reverted to 10 minutes (600,000ms) as requested
-        return (currentTimeMillis - lastSeenMillis) < 120_000L;
-    }
-
-    public boolean isManualWateringCommand() {
-        return manualWateringCommand;
-    }
-
-    public int getManualWateringDuration() {
-        return manualWateringDuration;
-    }
-
-    public boolean isPumpActive() {
-        return isPumpActive;
-    }
-
-    public boolean isAutoWateringEnabled() {
-        return autoWateringEnabled;
-    }
-
-    public String getWateringMode() {
-        return wateringMode;
-    }
-
-    public boolean isTaken() {
-        return isTaken;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public int getSensorIndex() {
-        return sensorIndex;
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
+    @Override public int describeContents() { return 0; }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {

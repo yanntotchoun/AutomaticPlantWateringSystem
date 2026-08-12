@@ -2,17 +2,18 @@ package com.team.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class PlantSettingsManager {
-
     private static final String SETTINGS_FILE = "plant_app_settings";
-
     private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
     private static final String KEY_LOW_HUMIDITY_ALERTS = "low_humidity_alerts";
     private static final String KEY_LOW_TANK_ALERTS = "low_tank_alerts";
     private static final String KEY_DISCONNECTION_ALERTS = "disconnection_alerts";
     private static final String KEY_WATERING_REMINDERS_ENABLED = "watering_reminders_enabled";
-
     private static final String KEY_PROFILE_IDS = "profile_ids";
     private static final String KEY_REMINDER_FREQUENCY = "reminder_frequency";
     private static final String KEY_PROFILES_INITIALIZED = "profiles_initialized";
@@ -23,53 +24,18 @@ public class PlantSettingsManager {
         this.prefs = context.getSharedPreferences(SETTINGS_FILE, Context.MODE_PRIVATE);
     }
 
-
-    public boolean isNotificationsEnabled() {
-        return prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true);
-    }
-
-    public void setNotificationsEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled).apply();
-    }
-
-    public boolean isLowHumidityAlertsEnabled() {
-        return prefs.getBoolean(KEY_LOW_HUMIDITY_ALERTS, true);
-    }
-
-    public void setLowHumidityAlertsEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_LOW_HUMIDITY_ALERTS, enabled).apply();
-    }
-
-    public boolean isLowTankAlertsEnabled() {
-        return prefs.getBoolean(KEY_LOW_TANK_ALERTS, true);
-    }
-
-    public void setLowTankAlertsEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply();
-    }
-
-    public boolean isDisconnectionAlertsEnabled() {
-        return prefs.getBoolean(KEY_DISCONNECTION_ALERTS, true);
-    }
-
-    public void setDisconnectionAlertsEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_DISCONNECTION_ALERTS, enabled).apply();
-    }
-
-    public boolean isWateringRemindersEnabled() {
-        return prefs.getBoolean(KEY_WATERING_REMINDERS_ENABLED, true);
-    }
-
-    public void setWateringRemindersEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_WATERING_REMINDERS_ENABLED, enabled).apply();
-    }
-    public String getReminderFrequency() {
-        return prefs.getString(KEY_REMINDER_FREQUENCY, "Every day");
-    }
-
-    public void setReminderFrequency(String frequency) {
-        prefs.edit().putString(KEY_REMINDER_FREQUENCY, frequency).apply();
-    }
+    public boolean isNotificationsEnabled() { return prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true); }
+    public void setNotificationsEnabled(boolean enabled) { prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled).apply(); }
+    public boolean isLowHumidityAlertsEnabled() { return prefs.getBoolean(KEY_LOW_HUMIDITY_ALERTS, true); }
+    public void setLowHumidityAlertsEnabled(boolean enabled) { prefs.edit().putBoolean(KEY_LOW_HUMIDITY_ALERTS, enabled).apply(); }
+    public boolean isLowTankAlertsEnabled() { return prefs.getBoolean(KEY_LOW_TANK_ALERTS, true); }
+    public void setLowTankAlertsEnabled(boolean enabled) { prefs.edit().putBoolean(KEY_LOW_TANK_ALERTS, enabled).apply(); }
+    public boolean isDisconnectionAlertsEnabled() { return prefs.getBoolean(KEY_DISCONNECTION_ALERTS, true); }
+    public void setDisconnectionAlertsEnabled(boolean enabled) { prefs.edit().putBoolean(KEY_DISCONNECTION_ALERTS, enabled).apply(); }
+    public boolean isWateringRemindersEnabled() { return prefs.getBoolean(KEY_WATERING_REMINDERS_ENABLED, true); }
+    public void setWateringRemindersEnabled(boolean enabled) { prefs.edit().putBoolean(KEY_WATERING_REMINDERS_ENABLED, enabled).apply(); }
+    public String getReminderFrequency() { return prefs.getString(KEY_REMINDER_FREQUENCY, "Every day"); }
+    public void setReminderFrequency(String frequency) { prefs.edit().putString(KEY_REMINDER_FREQUENCY, frequency).apply(); }
 
     public static class ThresholdProfile {
         public final String id;
@@ -84,10 +50,6 @@ public class PlantSettingsManager {
             this.fullTank = fullTank;
         }
 
-        /**
-         * Converts the descriptive tank string into a numeric threshold percentage
-         * that the hardware can use for comparison.
-         */
         public int getFullTankValue() {
             if (fullTank == null) return 30;
             switch (fullTank) {
@@ -102,31 +64,17 @@ public class PlantSettingsManager {
 
     public ThresholdProfile getThresholdProfile(String id) {
         String effectiveId = (id == null) ? "standard" : id;
-        
         String defaultName = "standard".equals(effectiveId) ? "Standard" : "Custom Profile";
-        int defaultDry = 30;
-        String defaultTank = "Sufficient";
-
         String name = prefs.getString("threshold_name_" + effectiveId, defaultName);
-        int dry = prefs.getInt("threshold_dry_" + effectiveId, defaultDry);
-        
+        int dry = prefs.getInt("threshold_dry_" + effectiveId, 30);
         String tank;
-        try {
-            tank = prefs.getString("threshold_tank_" + effectiveId, defaultTank);
-        } catch (ClassCastException e) {
-            // Fallback for legacy data where tank threshold was stored as an integer percentage (0-100)
-            // instead of a descriptive string (e.g. "Low", "Sufficient").
+        try { tank = prefs.getString("threshold_tank_" + effectiveId, "Sufficient"); }
+        catch (ClassCastException e) {
             int tankInt = prefs.getInt("threshold_tank_" + effectiveId, 0);
             tank = (tankInt < 30) ? "Low" : "Sufficient";
-            // Auto-fix the preference to prevent future crashes
             prefs.edit().putString("threshold_tank_" + effectiveId, tank).apply();
         }
-        
         return new ThresholdProfile(effectiveId, name, dry, tank);
-    }
-
-    private ThresholdProfile getDefaultProfile() {
-        return getThresholdProfile("standard");
     }
 
     public void saveThresholdProfile(ThresholdProfile profile) {
@@ -134,49 +82,33 @@ public class PlantSettingsManager {
         editor.putString("threshold_name_" + profile.id, profile.name)
                 .putInt("threshold_dry_" + profile.id, profile.drySoil)
                 .putString("threshold_tank_" + profile.id, profile.fullTank);
-
         if (!"standard".equals(profile.id)) {
-            java.util.Set<String> ids = new java.util.HashSet<>(prefs.getStringSet(KEY_PROFILE_IDS, new java.util.HashSet<>()));
-            if (ids.add(profile.id)) {
-                editor.putStringSet(KEY_PROFILE_IDS, ids);
-            }
+            Set<String> ids = new HashSet<>(prefs.getStringSet(KEY_PROFILE_IDS, new HashSet<>()));
+            if (ids.add(profile.id)) editor.putStringSet(KEY_PROFILE_IDS, ids);
         }
         editor.apply();
     }
 
     public void deleteThresholdProfile(String id) {
         if ("standard".equals(id)) return;
-
         SharedPreferences.Editor editor = prefs.edit();
-        editor.remove("threshold_name_" + id)
-                .remove("threshold_dry_" + id)
-                .remove("threshold_tank_" + id);
-
-        java.util.Set<String> currentIds = prefs.getStringSet(KEY_PROFILE_IDS, null);
+        editor.remove("threshold_name_" + id).remove("threshold_dry_" + id).remove("threshold_tank_" + id);
+        Set<String> currentIds = prefs.getStringSet(KEY_PROFILE_IDS, null);
         if (currentIds != null) {
-            java.util.Set<String> ids = new java.util.HashSet<>(currentIds);
-            if (ids.remove(id)) {
-                editor.putStringSet(KEY_PROFILE_IDS, ids);
-            }
+            Set<String> ids = new HashSet<>(currentIds);
+            if (ids.remove(id)) editor.putStringSet(KEY_PROFILE_IDS, ids);
         }
         editor.apply();
     }
 
-    public java.util.List<ThresholdProfile> getAllProfiles() {
-        java.util.List<ThresholdProfile> profiles = new java.util.ArrayList<>();
-        profiles.add(getDefaultProfile());
-        
-        java.util.Set<String> ids = prefs.getStringSet(KEY_PROFILE_IDS, null);
-        if (ids != null) {
-            // Sort or handle order if needed, but for now just add
-            for (String id : ids) {
-                profiles.add(getThresholdProfile(id));
-            }
-        }
+    public List<ThresholdProfile> getAllProfiles() {
+        List<ThresholdProfile> profiles = new ArrayList<>();
+        profiles.add(getThresholdProfile("standard"));
+        Set<String> ids = prefs.getStringSet(KEY_PROFILE_IDS, null);
+        if (ids != null) for (String id : ids) profiles.add(getThresholdProfile(id));
         return profiles;
     }
 
-    // Initialize some profiles if they don't exist
     public void initDefaultProfiles() {
         if (!prefs.getBoolean(KEY_PROFILES_INITIALIZED, false)) {
             saveThresholdProfile(new ThresholdProfile("tropical", "Tropical", 50, "Sufficient"));

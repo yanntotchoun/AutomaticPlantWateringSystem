@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingBottom="16dp">
-
         <include layout="@layout/layout_screen_header" />
-
-        <!-- Plant details card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -23,13 +18,11 @@
             app:cardBackgroundColor="@color/card_white"
             app:cardCornerRadius="24dp"
             app:cardElevation="3dp">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="20dp">
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -37,7 +30,6 @@
                     android:textColor="@color/text_dark_alt"
                     android:textSize="24sp"
                     android:textStyle="bold" />
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -45,8 +37,6 @@
                     android:text="@string/add_plant_intro"
                     android:textColor="@color/text_gray_666"
                     android:textSize="15sp" />
-
-                <!-- Plant photo -->
                 <ImageView
                     android:id="@+id/image_plant_preview"
                     android:layout_width="120dp"
@@ -57,7 +47,6 @@
                     android:clipToOutline="true"
                     android:contentDescription="Plant photo"
                     android:scaleType="centerCrop" />
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_select_photo"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -66,8 +55,6 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="10dp"
                     android:text="Select photo" />
-
-                <!-- Plant name -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -81,7 +68,6 @@
                     app:counterMaxLength="15"
                     app:hintEnabled="true"
                     app:hintTextColor="@color/text_gray_555">
-
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_plant_name"
                         android:layout_width="match_parent"
@@ -90,13 +76,9 @@
                         android:inputType="textCapWords"
                         android:maxLength="15"
                         android:maxLines="1" />
-
                 </com.google.android.material.textfield.TextInputLayout>
-
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-
         <TextView
             android:id="@+id/text_slot_status"
             android:layout_width="wrap_content"
@@ -108,8 +90,6 @@
             android:visibility="gone"
             tools:text="All hardware slots are occupied."
             tools:visibility="visible" />
-
-        <!-- Save / Cancel -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_save_plant"
             android:layout_width="match_parent"
@@ -118,7 +98,5 @@
             android:layout_marginTop="16dp"
             android:enabled="false"
             android:text="@string/save_plant" />
-
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>
