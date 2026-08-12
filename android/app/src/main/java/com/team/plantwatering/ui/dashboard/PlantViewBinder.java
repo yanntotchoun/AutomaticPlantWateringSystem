@@ -2,48 +2,56 @@ package com.team.plantwatering.ui.dashboard;
 
 import android.content.Context;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
+import com.bumptech.glide.Glide;
 import com.team.plantwatering.R;
-
+import com.team.plantwatering.data.PlantReading;
 import java.util.Locale;
 
-
 public final class PlantViewBinder {
-
-    private PlantViewBinder() {
-    }
-
+    private PlantViewBinder() {}
 
     public static void bindAvatar(TextView avatarView, String plantName) {
-        String initial = (plantName == null || plantName.isEmpty())
-                ? "?"
-                : plantName.substring(0, 1).toUpperCase(Locale.getDefault());
+        String initial = (plantName == null || plantName.isEmpty()) ? "?" : plantName.substring(0, 1).toUpperCase(Locale.getDefault());
         avatarView.setText(initial);
+    }
+
+    public static void bindAvatar(TextView avatarView, ImageView imageView, PlantReading plant) {
+        if (plant == null) {
+            imageView.setVisibility(View.GONE);
+            avatarView.setVisibility(View.VISIBLE);
+            bindAvatar(avatarView, null);
+            return;
+        }
+        String imageUrl = plant.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            avatarView.setVisibility(View.GONE);
+            imageView.setVisibility(View.VISIBLE);
+            Glide.with(imageView.getContext()).load(imageUrl).circleCrop().into(imageView);
+        } else {
+            Glide.with(imageView.getContext()).clear(imageView);
+            imageView.setVisibility(View.GONE);
+            avatarView.setVisibility(View.VISIBLE);
+            bindAvatar(avatarView, plant.getPlantName());
+        }
     }
 
     public static void bindStatusChip(TextView chipView, int humidity, int dryThreshold) {
         chipView.setText(DashboardUtils.humidityStatusLabel(humidity, dryThreshold));
         chipView.setTextColor(DashboardUtils.humidityTextColor(humidity, dryThreshold));
-        if (humidity < dryThreshold) {
-            chipView.setBackgroundResource(R.drawable.bg_chip_dry);
-        } else if (humidity < dryThreshold + 30) {
-            chipView.setBackgroundResource(R.drawable.bg_chip_medium);
-        } else {
-            chipView.setBackgroundResource(R.drawable.bg_chip_healthy);
-        }
+        if (humidity < dryThreshold) chipView.setBackgroundResource(R.drawable.bg_chip_dry);
+        else if (humidity < dryThreshold + 30) chipView.setBackgroundResource(R.drawable.bg_chip_medium);
+        else chipView.setBackgroundResource(R.drawable.bg_chip_healthy);
     }
-
 
     public static void bindDropletBar(LinearLayout container, int humidityPercentage) {
         Context context = container.getContext();
         int filledCount = DashboardUtils.filledDropletCount(humidityPercentage);
-
         container.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(context);
-
         for (int i = 0; i < 10; i++) {
             ImageView drop = new ImageView(context);
             int sizePx = (int) (26 * context.getResources().getDisplayMetrics().density);
@@ -55,12 +63,21 @@ public final class PlantViewBinder {
         }
     }
 
+    public static void bindWaterTank(ImageView bucketView, TextView statusView, String waterLevel) {
+        String lower = (waterLevel != null) ? waterLevel.toLowerCase() : "";
+        boolean isFull = (lower.contains("sufficient") || lower.contains("full")) && !lower.contains("insufficient");
+        bucketView.setImageResource(isFull ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail);
+        statusView.setText(waterLevel);
+        statusView.setTextColor(DashboardUtils.tankTextColor(waterLevel));
+    }
 
-    public static void bindWaterTank(ImageView bucketView, TextView percentView, int waterTank, int fullThreshold) {
-        bucketView.setImageResource(
-                waterTank >= fullThreshold ? R.drawable.bucket_of_water_detail : R.drawable.bucket_detail
-        );
-        percentView.setText(String.format(Locale.getDefault(), "%d%%", waterTank));
-        percentView.setTextColor(DashboardUtils.tankTextColor(waterTank, fullThreshold));
+    public static void bindConnectionStatus(TextView statusView, PlantReading plant, long currentServerTime) {
+        if (plant.isOnline(currentServerTime)) {
+            statusView.setText("Online");
+            statusView.setTextColor(statusView.getContext().getColor(R.color.status_healthy_text));
+        } else {
+            statusView.setText("Offline");
+            statusView.setTextColor(statusView.getContext().getColor(R.color.error_red));
+        }
     }
 }

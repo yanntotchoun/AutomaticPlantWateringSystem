@@ -1,31 +1,33 @@
 package com.team.plantwatering;
 
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-
+import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.team.plantwatering.data.PlantReading;
 import com.team.plantwatering.ui.dashboard.AddPlantFragment;
 import com.team.plantwatering.ui.dashboard.DashboardFragment;
 import com.team.plantwatering.ui.dashboard.OverviewFragment;
 import com.team.plantwatering.ui.dashboard.PlantDetailsFragment;
-import com.team.plantwatering.ui.dashboard.SettingsFragment;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.team.plantwatering.ui.dashboard.ReminderWorker;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import java.util.concurrent.TimeUnit;
+import com.team.plantwatering.ui.dashboard.PlantMonitoringService;
 import com.team.plantwatering.ui.dashboard.PlantSettingsManager;
-
+import com.team.plantwatering.ui.dashboard.ReminderWorker;
+import com.team.plantwatering.ui.dashboard.SettingsFragment;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity
         implements DashboardFragment.PlantClickListener,
         OverviewFragment.PlantClickListener,
         AddPlantFragment.PlantClickListener {
 
+    private static final String DETAILS_BACK_STACK_TAG = "plant_details";
     private BottomNavigationView bottomNavigationView;
 
     @Override
@@ -59,41 +61,30 @@ public class MainActivity extends AppCompatActivity
         }
 
         checkAndScheduleReminders();
+        checkAndStartMonitoringService();
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
-            // If we returned to a tab fragment from the details, show the bottom nav again.
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                bottomNavigationView.setVisibility(android.view.View.VISIBLE);
+                bottomNavigationView.setVisibility(View.VISIBLE);
             }
         });
     }
 
-    /**
-     * Swaps the visible tab fragment without adding it to the back stack,
-     * and clears any Details screen that may have been on top.
-     */
     private void showTabFragment(Fragment fragment) {
-        // Clear any PlantDetailsFragment (and its back stack entry) that might be showing.
         getSupportFragmentManager().popBackStack(
                 DETAILS_BACK_STACK_TAG,
                 FragmentManager.POP_BACK_STACK_INCLUSIVE
         );
-        bottomNavigationView.setVisibility(android.view.View.VISIBLE);
-
+        bottomNavigationView.setVisibility(View.VISIBLE);
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
     }
 
-    private static final String DETAILS_BACK_STACK_TAG = "plant_details";
-
-
     private void openPlantDetails(PlantReading plant) {
         PlantDetailsFragment detailsFragment = PlantDetailsFragment.newInstance(plant);
-
-        bottomNavigationView.setVisibility(android.view.View.GONE);
-
+        bottomNavigationView.setVisibility(View.GONE);
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, detailsFragment)
@@ -104,6 +95,18 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onPlantClicked(PlantReading plant) {
         openPlantDetails(plant);
+    }
+
+    private void checkAndStartMonitoringService() {
+        PlantSettingsManager settingsManager = new PlantSettingsManager(this);
+        if (settingsManager.isNotificationsEnabled()) {
+            Intent intent = new Intent(this, PlantMonitoringService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+        }
     }
 
     private void checkAndScheduleReminders() {
@@ -120,7 +123,7 @@ public class MainActivity extends AppCompatActivity
 
                 WorkManager.getInstance(this).enqueueUniquePeriodicWork(
                         "watering_reminder",
-                        ExistingPeriodicWorkPolicy.KEEP, // KEEP ensures we don't restart the cycle if it's already running
+                        ExistingPeriodicWorkPolicy.KEEP,
                         reminderRequest);
             }
         }
@@ -128,19 +131,12 @@ public class MainActivity extends AppCompatActivity
 
     private long frequencyToMillis(String frequency) {
         switch (frequency) {
-            case "Every day":
-                return TimeUnit.DAYS.toMillis(1);
-            case "Every 3 days":
-                return TimeUnit.DAYS.toMillis(3);
-            case "Twice a Week":
-                return TimeUnit.DAYS.toMillis(7) / 2;
-            case "Weekly":
-                return TimeUnit.DAYS.toMillis(7);
-            case "Every month":
-                return TimeUnit.DAYS.toMillis(30);
-            default:
-                return -1L;
+            case "Every day": return TimeUnit.DAYS.toMillis(1);
+            case "Every 3 days": return TimeUnit.DAYS.toMillis(3);
+            case "Twice a Week": return TimeUnit.DAYS.toMillis(7) / 2;
+            case "Weekly": return TimeUnit.DAYS.toMillis(7);
+            case "Every month": return TimeUnit.DAYS.toMillis(30);
+            default: return -1L;
         }
     }
-
 }

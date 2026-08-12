@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingBottom="16dp">
-
         <include layout="@layout/layout_screen_header" />
-
-        <!-- Plant details card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -23,13 +18,11 @@
             app:cardBackgroundColor="@color/card_white"
             app:cardCornerRadius="24dp"
             app:cardElevation="3dp">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="20dp">
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -37,7 +30,6 @@
                     android:textColor="@color/text_dark_alt"
                     android:textSize="24sp"
                     android:textStyle="bold" />
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -45,8 +37,24 @@
                     android:text="@string/add_plant_intro"
                     android:textColor="@color/text_gray_666"
                     android:textSize="15sp" />
-
-                <!-- Plant name -->
+                <ImageView
+                    android:id="@+id/image_plant_preview"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_avatar_circle"
+                    android:clipToOutline="true"
+                    android:contentDescription="Plant photo"
+                    android:scaleType="centerCrop" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_select_photo"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:text="Select photo" />
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -56,96 +64,39 @@
                     app:boxCornerRadiusBottomStart="18dp"
                     app:boxCornerRadiusTopEnd="18dp"
                     app:boxCornerRadiusTopStart="18dp"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="15"
                     app:hintEnabled="true"
                     app:hintTextColor="@color/text_gray_555">
-
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_plant_name"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/plant_name_hint"
                         android:inputType="textCapWords"
+                        android:maxLength="15"
                         android:maxLines="1" />
-
                 </com.google.android.material.textfield.TextInputLayout>
-
-
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Device pairing -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/card_white"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="3dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/device_pairing"
-                    android:textColor="@color/text_dark_alt"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/text_mcu_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/mcu_not_connected"
-                    android:textColor="@color/status_dry_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_connect_mcu"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/connect_to_mcu" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Sensor readings arrive from the plant's ESP32 device once paired - nothing to enter here. -->
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/text_slot_status"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            android:text="@string/sensor_readings_note"
-            android:textColor="@color/text_gray_666"
-            android:textSize="14sp" />
-
-        <!-- Save / Cancel -->
+            android:layout_marginTop="8dp"
+            android:textAlignment="center"
+            android:visibility="gone"
+            tools:text="All hardware slots are occupied."
+            tools:visibility="visible" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_save_plant"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
+            android:enabled="false"
             android:text="@string/save_plant" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_cancel_add_plant"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="4dp"
-            android:text="@string/cancel" />
-
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>

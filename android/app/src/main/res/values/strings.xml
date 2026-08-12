@@ -5,7 +5,7 @@
     <!-- Shared -->
     <string name="tap_card_to_open">Tap card to open plant page</string>
     <string name="soil_humidity">Soil humidity</string>
-    <string name="last_watered">Last watered</string>
+    <string name="last_seen_online">Last seen online</string>
     <string name="water_tank">Water tank</string>
     <string name="water_tank_bucket">Water tank bucket</string>
     <string name="show_plant_information">Show plant information</string>
@@ -22,6 +22,8 @@
     <string name="average_tank_level">Average tank level</string>
     <string name="average_temperature">Average temperature</string>
     <string name="no_plants_found">No plants found.</string>
+    <string name="no_plants_added_yet">No plants added yet</string>
+    <string name="tap_add_plant_button_to_start_monitoring">Tap the add button to start monitoring your plants</string>
 
     <!-- Overview -->
     <string name="overview_title">Plant Overview</string>
@@ -35,6 +37,8 @@
     <string name="personalized_plant_page">Personalized Plant Page</string>
     <string name="plant_recommendation">Plant recommendation</string>
     <string name="back_to_dashboard">Back to dashboard</string>
+    <string name="watering_log_title">Recent watering events</string>
+    <string name="watering_log_empty">No watering events recorded yet.</string>
 
     <!-- AddPlant -->
     <string name="add_plant_title">Plant Adding</string>
@@ -42,6 +46,9 @@
     <string name="device_pairing">Device pairing</string>
     <string name="mcu_not_connected">Not connected</string>
     <string name="mcu_connected">Connected to %1$s</string>
+    <string name="mcu_checking_availability">Checking for an available device…</string>
+    <string name="mcu_slot_ready">Device slot found — ready to save</string>
+    <string name="mcu_no_slots">No available device slots found. Make sure your ESP32 is powered on and connected to WiFi.</string>
     <string name="connect_to_mcu">Connect to MCU</string>
     <string name="plant_details">Plant Details</string>
     <string name="plant_name_hint">Plant Name</string>
@@ -49,6 +56,7 @@
     <string name="save_plant">Save Plant</string>
     <string name="watering_frequency_hint">Watering Frequency (days)</string>
     <string name="add_plant_intro">Enter your plant details and connect to your watering device to start monitoring.</string>
+    <string name="all_slots_occupied">All hardware slots are occupied.</string>
     <string name="cancel">Cancel</string>
     <string name="sensor_readings_note">Note: Sensor readings will appear once the device is connected.</string>
 
@@ -73,6 +81,8 @@
     <string name="low_humidity_alerts_desc">Notify when soil humidity is below the dry threshold.</string>
     <string name="low_tank_alerts">Low tank alerts</string>
     <string name="low_tank_alerts_desc">Notify when the water tank level is low.</string>
+    <string name="disconnection_alerts">Disconnection alerts</string>
+    <string name="disconnection_desc">Notify when a device loses connection to the system.</string>
     <string name="profile_name_hint">Profile Name</string>
     <string name="add_new_profile">Add New</string>
     <string name="delete_profile">Delete</string>
@@ -94,6 +104,6 @@
     <string name="wateringreminder">Watering Reminders</string>
     <string name="reminder_notification_title">Plant Watering Reminder</string>
     <string name="reminder_notification_text">It\'s time to check if your plants need watering!</string>
-    <string name="wateringreminder_description">Sets how often you\'ll get a reminder to manually water your plants and to check for low humidity or a low water tank level.</string>
+    <string name="wateringreminder_description">Sets how often you\'ll get a reminder to manually water your plants.</string>
 
 </resources>

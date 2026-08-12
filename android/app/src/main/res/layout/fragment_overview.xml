@@ -3,9 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
     <include layout="@layout/layout_screen_header" />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_overview"
         android:layout_width="match_parent"
@@ -14,5 +12,4 @@
         android:clipToPadding="false"
         android:paddingTop="16dp"
         android:paddingBottom="12dp" />
-
 </LinearLayout>
